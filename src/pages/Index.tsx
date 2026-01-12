@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { Header } from "@/components/menu/Header";
 import { CategoryNav } from "@/components/menu/CategoryNav";
@@ -15,7 +15,39 @@ function MenuContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
   const { clearCart, totalItems } = useCart();
+
+  // Intersection Observer para detectar categoria visível
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: '-200px 0px -50% 0px',
+      threshold: 0
+    };
+
+    categories.forEach((category) => {
+      const element = document.getElementById(`category-${category.id}`);
+      if (element) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !isScrolling) {
+              setActiveCategory(category.id);
+            }
+          });
+        }, observerOptions);
+        
+        observer.observe(element);
+        observers.push(observer);
+      }
+    });
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, [isScrolling]);
 
   const productsByCategory = useMemo(() => {
     return categories.map((category) => ({
@@ -25,6 +57,7 @@ function MenuContent() {
   }, []);
 
   const handleCategoryChange = (categoryId: string) => {
+    setIsScrolling(true);
     setActiveCategory(categoryId);
     const element = document.getElementById(`category-${categoryId}`);
     if (element) {
@@ -35,6 +68,9 @@ function MenuContent() {
         top: offsetPosition,
         behavior: "smooth",
       });
+      
+      // Resetar flag após scroll completar
+      setTimeout(() => setIsScrolling(false), 800);
     }
   };
 
