@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { CartProvider, useCart } from "@/contexts/CartContext";
+import { useOrders } from "@/contexts/OrdersContext";
 import { Header } from "@/components/menu/Header";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { CategorySection } from "@/components/menu/CategorySection";
@@ -16,7 +17,8 @@ function MenuContent() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const { clearCart, totalItems } = useCart();
+  const { clearCart, totalItems, items } = useCart();
+  const { addOrder } = useOrders();
 
   // Intersection Observer para detectar categoria visível
   useEffect(() => {
@@ -75,7 +77,8 @@ function MenuContent() {
   };
 
   const handleCheckout = () => {
-    const newOrderNumber = Math.floor(Math.random() * 99) + 1;
+    // Enviar pedido para a cozinha
+    const newOrderNumber = addOrder(items);
     setOrderNumber(newOrderNumber);
     clearCart();
     setIsCartOpen(false);
