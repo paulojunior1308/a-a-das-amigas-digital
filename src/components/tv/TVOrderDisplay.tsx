@@ -35,16 +35,16 @@ export function TVOrderDisplay({ order, isNew = false }: TVOrderDisplayProps) {
         </div>
       )}
 
-      {/* Order number */}
+      {/* Comanda number */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
           <CheckCircle className="w-10 h-10" />
           <span className="text-2xl font-semibold uppercase tracking-wider">
-            Pedido Pronto
+            Comanda Pronta
           </span>
         </div>
         <span className="text-8xl font-bold block">
-          #{order.orderNumber.toString().padStart(2, "0")}
+          #{order.comandaNumber.toString().padStart(2, "0")}
         </span>
       </div>
     </div>

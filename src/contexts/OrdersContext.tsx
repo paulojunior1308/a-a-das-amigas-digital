@@ -3,7 +3,7 @@ import { CartItem } from "@/types/menu";
 
 export interface Order {
   id: string;
-  orderNumber: number;
+  comandaNumber: number;
   items: CartItem[];
   status: "preparing" | "ready";
   createdAt: Date;
@@ -13,7 +13,7 @@ export interface Order {
 interface OrdersContextType {
   orders: Order[];
   readyOrders: Order[];
-  addOrder: (items: CartItem[]) => number;
+  addOrder: (items: CartItem[], comandaNumber: number) => void;
   markAsReady: (orderId: string) => void;
   removeReadyOrder: (orderId: string) => void;
 }
@@ -25,7 +25,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
     // Pedidos de exemplo para demonstração
     {
       id: "demo-1",
-      orderNumber: 1,
+      comandaNumber: 5,
       items: [
         { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai" }, quantity: 2, observation: "Sem granola" },
         { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai" }, quantity: 1, observation: "" },
@@ -35,7 +35,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
     },
     {
       id: "demo-2",
-      orderNumber: 2,
+      comandaNumber: 12,
       items: [
         { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis" }, quantity: 3, observation: "Bem passado" },
       ],
@@ -44,7 +44,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
     },
     {
       id: "demo-3",
-      orderNumber: 3,
+      comandaNumber: 8,
       items: [
         { product: { id: "4", name: "Suco de Laranja", description: "Natural", price: 7, category: "bebidas" }, quantity: 2, observation: "Sem gelo" },
         { product: { id: "5", name: "Água Mineral", description: "500ml", price: 4, category: "bebidas" }, quantity: 1, observation: "" },
@@ -55,22 +55,18 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
   ]);
   
   const [readyOrders, setReadyOrders] = useState<Order[]>([]);
-  const [nextOrderNumber, setNextOrderNumber] = useState(4);
 
-  const addOrder = useCallback((items: CartItem[]) => {
+  const addOrder = useCallback((items: CartItem[], comandaNumber: number) => {
     const newOrder: Order = {
       id: `order-${Date.now()}`,
-      orderNumber: nextOrderNumber,
+      comandaNumber,
       items,
       status: "preparing",
       createdAt: new Date(),
     };
     
     setOrders((prev) => [...prev, newOrder]);
-    setNextOrderNumber((prev) => prev + 1);
-    
-    return nextOrderNumber;
-  }, [nextOrderNumber]);
+  }, []);
 
   const markAsReady = useCallback((orderId: string) => {
     setOrders((prev) => {

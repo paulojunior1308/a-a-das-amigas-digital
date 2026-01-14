@@ -1,6 +1,6 @@
 import { Order } from "@/contexts/OrdersContext";
 import { cn } from "@/lib/utils";
-import { Clock, Package } from "lucide-react";
+import { Clock, Package, CreditCard } from "lucide-react";
 
 interface KitchenOrderCardProps {
   order: Order;
@@ -30,10 +30,14 @@ export function KitchenOrderCard({ order, onClick }: KitchenOrderCardProps) {
         )}
       />
 
-      {/* Order number */}
+      {/* Comanda number */}
       <div className="text-center mb-4">
+        <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
+          <CreditCard className="w-4 h-4" />
+          <span className="text-sm font-medium">Comanda</span>
+        </div>
         <span className="text-6xl font-bold text-acai-purple-deep">
-          #{order.orderNumber.toString().padStart(2, "0")}
+          #{order.comandaNumber.toString().padStart(2, "0")}
         </span>
       </div>
 
