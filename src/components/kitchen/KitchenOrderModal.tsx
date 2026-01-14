@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Clock, MessageSquare } from "lucide-react";
+import { Check, Clock, MessageSquare, CreditCard } from "lucide-react";
 
 interface KitchenOrderModalProps {
   order: Order | null;
@@ -36,9 +36,12 @@ export function KitchenOrderModal({
       <DialogContent className="max-w-lg mx-auto bg-card border-2 border-acai-purple">
         <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-4xl font-bold text-acai-purple-deep">
-              Comanda #{order.orderNumber.toString().padStart(2, "0")}
-            </DialogTitle>
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-6 h-6 text-acai-purple" />
+              <DialogTitle className="text-4xl font-bold text-acai-purple-deep">
+                Comanda #{order.comandaNumber.toString().padStart(2, "0")}
+              </DialogTitle>
+            </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="w-5 h-5" />
               <span className="text-lg">{minutesAgo} min</span>
@@ -82,7 +85,7 @@ export function KitchenOrderModal({
             className="w-full h-16 text-xl font-bold bg-green-500 hover:bg-green-600 text-white rounded-xl"
           >
             <Check className="w-6 h-6 mr-2" />
-            Finalizar Pedido
+            Marcar como Pronto
           </Button>
         </div>
       </DialogContent>
