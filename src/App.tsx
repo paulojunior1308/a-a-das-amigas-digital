@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { OrdersProvider } from "@/contexts/OrdersContext";
 import { ComandaProvider } from "@/contexts/ComandaContext";
 import Login from "./pages/Login";
+import Admin from "./pages/Admin";
 import Cardapio from "./pages/Cardapio";
 import Kitchen from "./pages/Kitchen";
 import TV from "./pages/TV";
@@ -24,6 +25,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Login />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/cardapio" element={<Cardapio />} />
               <Route path="/cozinha" element={<Kitchen />} />
               <Route path="/tv" element={<TV />} />
