@@ -18,9 +18,21 @@ export function CategoryNav({
   const [showRightIndicator, setShowRightIndicator] = useState(true);
   const [showLeftIndicator, setShowLeftIndicator] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const prevActiveRef = useRef(activeCategory);
 
-  // Detectar se há scroll disponível
+  // Detectar scroll da página para modo compacto
+  useEffect(() => {
+    const handlePageScroll = () => {
+      const scrollY = window.scrollY;
+      setIsCompact(scrollY > 100);
+    };
+
+    window.addEventListener("scroll", handlePageScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handlePageScroll);
+  }, []);
+
+  // Detectar se há scroll disponível nas categorias
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -53,7 +65,12 @@ export function CategoryNav({
   }, [activeCategory]);
 
   return (
-    <nav className="sticky top-44 z-30 bg-acai-purple-deep/95 backdrop-blur-sm py-3 -mx-4 mb-4 relative">
+    <nav 
+      className={cn(
+        "sticky z-30 bg-acai-purple-deep/95 backdrop-blur-sm -mx-4 relative transition-all duration-300",
+        isCompact ? "top-0 py-1.5" : "top-44 py-3"
+      )}
+    >
       {/* Indicador de scroll à esquerda */}
       <div
         className={cn(
@@ -66,7 +83,10 @@ export function CategoryNav({
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-4"
+        className={cn(
+          "flex gap-2 overflow-x-auto scrollbar-hide px-4 transition-all duration-300",
+          isCompact ? "pb-1" : "pb-2"
+        )}
       >
         {categories.map((category) => (
           <button
@@ -74,7 +94,8 @@ export function CategoryNav({
             data-category={category.id}
             onClick={() => onCategoryChange(category.id)}
             className={cn(
-              "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300",
+              "rounded-full font-semibold whitespace-nowrap transition-all duration-300",
+              isCompact ? "px-3 py-1 text-xs" : "px-4 py-2 text-sm",
               activeCategory === category.id
                 ? "bg-primary text-primary-foreground shadow-lg scale-105"
                 : "bg-acai-lilac text-card-foreground hover:bg-acai-lilac-light",
@@ -93,7 +114,10 @@ export function CategoryNav({
           showRightIndicator ? "opacity-100" : "opacity-0"
         )}
       >
-        <ChevronRight className="w-5 h-5 text-acai-yellow animate-pulse" />
+        <ChevronRight className={cn(
+          "text-acai-yellow animate-pulse transition-all duration-300",
+          isCompact ? "w-4 h-4" : "w-5 h-5"
+        )} />
       </div>
     </nav>
   );
