@@ -68,7 +68,7 @@ export function CategoryNav({
     <nav 
       className={cn(
         "sticky z-30 bg-acai-purple-deep/95 backdrop-blur-sm -mx-4 relative transition-all duration-300",
-        isCompact ? "top-[88px] py-1.5 shadow-lg" : "top-44 py-3"
+        isCompact ? "top-0 py-1.5" : "top-44 py-3"
       )}
     >
       {/* Indicador de scroll à esquerda */}
