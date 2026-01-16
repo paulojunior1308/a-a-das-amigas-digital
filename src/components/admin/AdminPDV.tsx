@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { 
   ShoppingCart, 
   Search, 
@@ -35,6 +35,7 @@ import { useSales } from "@/contexts/SalesContext";
 import { useStock } from "@/contexts/StockContext";
 import { PDVCartItem, Sale } from "@/types/admin";
 import { toast } from "sonner";
+import QRCodeScanner from "./QRCodeScanner";
 
 export default function AdminPDV() {
   const { products, categories } = useProducts();
@@ -112,8 +113,7 @@ export default function AdminPDV() {
     setShowQRModal(true);
   };
 
-  const handleScanComanda = () => {
-    const comandaNumber = parseInt(qrInput);
+  const loadComandaByNumber = useCallback((comandaNumber: number) => {
     if (isNaN(comandaNumber) || comandaNumber <= 0) {
       toast.error("Número de comanda inválido");
       return;
@@ -156,6 +156,34 @@ export default function AdminPDV() {
     setCurrentComanda(comandaNumber);
     setShowQRModal(false);
     toast.success(`Comanda #${comandaNumber} carregada com ${items.length} itens`);
+  }, [orders, readyOrders]);
+
+  const handleScanComanda = () => {
+    const comandaNumber = parseInt(qrInput);
+    loadComandaByNumber(comandaNumber);
+  };
+
+  const handleQRScanSuccess = (decodedText: string) => {
+    // Try to extract comanda number from QR code
+    // QR code might be just a number or a URL with number
+    let comandaNumber: number;
+    
+    // Try to parse as number first
+    comandaNumber = parseInt(decodedText);
+    
+    // If not a direct number, try to extract from URL or other format
+    if (isNaN(comandaNumber)) {
+      const match = decodedText.match(/comanda[=\/:]?(\d+)/i);
+      if (match) {
+        comandaNumber = parseInt(match[1]);
+      }
+    }
+    
+    if (!isNaN(comandaNumber) && comandaNumber > 0) {
+      loadComandaByNumber(comandaNumber);
+    } else {
+      toast.error("QR Code inválido. Não foi possível identificar o número da comanda.");
+    }
   };
 
   const handleFinalizeSale = () => {
@@ -384,7 +412,7 @@ export default function AdminPDV() {
 
       {/* QR Scanner Modal */}
       <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
-        <DialogContent className="bg-card border-border max-w-sm">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <QrCode className="w-5 h-5" />
@@ -392,12 +420,23 @@ export default function AdminPDV() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="bg-secondary/50 rounded-xl p-8 flex flex-col items-center justify-center">
-              <Camera className="w-16 h-16 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground text-center">
-                Escaneie o QR Code da comanda ou digite o número abaixo
-              </p>
+            {/* QR Code Scanner */}
+            <QRCodeScanner 
+              onScanSuccess={handleQRScanSuccess}
+              onScanError={(err) => console.log("Scanner error:", err)}
+            />
+            
+            {/* Manual input divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou digite manualmente</span>
+              </div>
             </div>
+
+            {/* Manual number input */}
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">
                 Número da Comanda
@@ -417,6 +456,7 @@ export default function AdminPDV() {
             </Button>
             <Button
               onClick={handleScanComanda}
+              disabled={!qrInput}
               className="bg-primary text-primary-foreground"
             >
               Carregar Comanda

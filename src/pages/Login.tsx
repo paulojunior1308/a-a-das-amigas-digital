@@ -27,9 +27,12 @@ export default function Login() {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Mock validation
+    // Mock validation - normalize email for comparison
+    const normalizedEmail = email.trim().toLowerCase();
+    const validEmails = [MOCK_CREDENTIALS.email.toLowerCase(), "admin"];
+    
     if (
-      (email === MOCK_CREDENTIALS.email || email === "admin") &&
+      validEmails.includes(normalizedEmail) &&
       password === MOCK_CREDENTIALS.password
     ) {
       // Store mock session
