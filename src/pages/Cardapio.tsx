@@ -36,14 +36,16 @@ function CardapioContent() {
     }
   }, [searchParams, setComandaNumber]);
 
-  // Intersection Observer para detectar categoria visível
+  // Intersection Observer para detectar categoria visível (apenas durante scroll manual)
   useEffect(() => {
+    if (isScrolling) return; // Não observar durante scroll programático
+    
     const observers: IntersectionObserver[] = [];
     
     const observerOptions = {
       root: null,
-      rootMargin: '-200px 0px -50% 0px',
-      threshold: 0
+      rootMargin: '-160px 0px -60% 0px',
+      threshold: 0.1
     };
 
     categories.forEach((category) => {
@@ -51,7 +53,7 @@ function CardapioContent() {
       if (element) {
         const observer = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && !isScrolling) {
+            if (entry.isIntersecting) {
               setActiveCategory(category.id);
             }
           });
