@@ -41,13 +41,21 @@ export function CategoryNav({
       setIsAnimating(true);
       const timer = setTimeout(() => setIsAnimating(false), 400);
       prevActiveRef.current = activeCategory;
-      
-      // Scroll automático para mostrar categoria ativa
-      const activeButton = scrollRef.current?.querySelector(`[data-category="${activeCategory}"]`);
-      if (activeButton) {
-        activeButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+
+      // Centralizar a categoria ativa no scroll horizontal SEM afetar o scroll vertical da página
+      const container = scrollRef.current;
+      const activeButton = container?.querySelector(
+        `[data-category="${activeCategory}"]`
+      ) as HTMLElement | null;
+
+      if (container && activeButton) {
+        const targetLeft =
+          activeButton.offsetLeft -
+          (container.clientWidth - activeButton.clientWidth) / 2;
+
+        container.scrollTo({ left: targetLeft, behavior: "smooth" });
       }
-      
+
       return () => clearTimeout(timer);
     }
   }, [activeCategory]);
