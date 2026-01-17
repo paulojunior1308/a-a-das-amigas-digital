@@ -79,7 +79,8 @@ function CardapioContent() {
     setActiveCategory(categoryId);
     const element = document.getElementById(`category-${categoryId}`);
     if (element) {
-      const headerOffset = 200;
+      // Offset para header (88px) + menu categorias (~56px) + margem
+      const headerOffset = 160;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       window.scrollTo({
@@ -127,13 +128,15 @@ function CardapioContent() {
     <div className="min-h-screen pb-28">
       <CardapioHeader comandaNumber={comandaNumber} />
 
-      <main className="px-4">
+      <div className="px-4">
         <CategoryNav
           categories={categories}
           activeCategory={activeCategory}
           onCategoryChange={handleCategoryChange}
         />
+      </div>
 
+      <main className="px-4 pt-4">
         {productsByCategory.map(({ category, products }) => (
           <CategorySection
             key={category.id}
