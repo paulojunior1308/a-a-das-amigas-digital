@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useSearchParams, Navigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useComanda } from "@/contexts/ComandaContext";
@@ -21,9 +21,9 @@ function CardapioContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showOrderSent, setShowOrderSent] = useState(false);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const { clearCart, totalItems, items } = useCart();
+  const { clearCart, items } = useCart();
   const { addOrder } = useOrders();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Capturar número da comanda da URL ao carregar
   useEffect(() => {
@@ -36,39 +36,6 @@ function CardapioContent() {
     }
   }, [searchParams, setComandaNumber]);
 
-  // Intersection Observer para detectar categoria visível (apenas durante scroll manual)
-  useEffect(() => {
-    if (isScrolling) return; // Não observar durante scroll programático
-    
-    const observers: IntersectionObserver[] = [];
-    
-    const observerOptions = {
-      root: null,
-      rootMargin: '-160px 0px -60% 0px',
-      threshold: 0.1
-    };
-
-    categories.forEach((category) => {
-      const element = document.getElementById(`category-${category.id}`);
-      if (element) {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveCategory(category.id);
-            }
-          });
-        }, observerOptions);
-        
-        observer.observe(element);
-        observers.push(observer);
-      }
-    });
-
-    return () => {
-      observers.forEach((observer) => observer.disconnect());
-    };
-  }, [isScrolling]);
-
   const productsByCategory = useMemo(() => {
     return categories.map((category) => ({
       category,
@@ -76,33 +43,57 @@ function CardapioContent() {
     }));
   }, []);
 
+  // Intersection Observer para detectar categoria visível (somente para destacar no menu)
+  useEffect(() => {
+    const root = scrollContainerRef.current;
+    if (!root) return;
+
+    const observers: IntersectionObserver[] = [];
+
+    const observerOptions: IntersectionObserverInit = {
+      root,
+      rootMargin: "-20% 0px -70% 0px",
+      threshold: 0.1,
+    };
+
+    categories.forEach((category) => {
+      const element = document.getElementById(`category-${category.id}`);
+      if (!element) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveCategory(category.id);
+          }
+        });
+      }, observerOptions);
+
+      observer.observe(element);
+      observers.push(observer);
+    });
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, []);
+
   const handleCategoryChange = (categoryId: string) => {
-    setIsScrolling(true);
-    setActiveCategory(categoryId);
     const element = document.getElementById(`category-${categoryId}`);
-    if (element) {
-      // Offset para header (88px) + menu categorias (~56px) + margem
-      const headerOffset = 160;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
-      
-      setTimeout(() => setIsScrolling(false), 800);
-    }
+    if (!element) return;
+
+    // Navegação puramente por rolagem até a âncora (dentro do container de scroll)
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleCheckout = () => {
     if (!comandaNumber) return;
-    
+
     // Enviar pedido para a cozinha com número da comanda
     addOrder(items, comandaNumber);
     clearCart();
     setIsCartOpen(false);
     setShowOrderSent(true);
-    
+
     // Fechar mensagem após 3 segundos
     setTimeout(() => setShowOrderSent(false), 3000);
   };
@@ -115,9 +106,7 @@ function CardapioContent() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-destructive/20 flex items-center justify-center">
             <AlertCircle className="w-10 h-10 text-destructive" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">
-            Comanda Inválida
-          </h1>
+          <h1 className="text-2xl font-bold text-white mb-3">Comanda Inválida</h1>
           <p className="text-acai-lilac text-lg">
             Por favor, escaneie o QR Code da sua mesa para acessar o cardápio.
           </p>
@@ -127,7 +116,7 @@ function CardapioContent() {
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="h-screen overflow-hidden flex flex-col">
       <CardapioHeader comandaNumber={comandaNumber} />
 
       <div className="px-4">
@@ -138,7 +127,11 @@ function CardapioContent() {
         />
       </div>
 
-      <main className="px-4 pt-4">
+      {/* Container único de scroll do cardápio */}
+      <main
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 pt-4 pb-28"
+      >
         {productsByCategory.map(({ category, products }) => (
           <CategorySection
             key={category.id}

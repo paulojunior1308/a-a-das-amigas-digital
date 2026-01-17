@@ -61,7 +61,7 @@ export function CategorySection({
   if (products.length === 0) return null;
 
   return (
-    <section id={`category-${category.id}`} className="mb-8 scroll-mt-40">
+    <section id={`category-${category.id}`} className="mb-8">
       <div className="category-stripe rounded-lg py-3 px-4 mb-4">
         <h2 className="text-xl font-extrabold uppercase tracking-wide text-card-foreground text-shadow-title">
           {category.name}
