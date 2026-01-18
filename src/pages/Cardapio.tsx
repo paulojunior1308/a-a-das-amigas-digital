@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useOrders } from "@/contexts/OrdersContext";
@@ -10,6 +10,8 @@ import { AddItemModal } from "@/components/menu/AddItemModal";
 import { CartBar } from "@/components/menu/CartBar";
 import { CartDrawer } from "@/components/menu/CartDrawer";
 import { OrderSent } from "@/components/menu/OrderSent";
+import { SearchBar } from "@/components/menu/SearchBar";
+import { BackToTopButton } from "@/components/menu/BackToTopButton";
 import { categories, products } from "@/data/menuData";
 import { Product } from "@/types/menu";
 import { AlertCircle } from "lucide-react";
@@ -21,6 +23,8 @@ function CardapioContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showOrderSent, setShowOrderSent] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const { clearCart, items } = useCart();
   const { addOrder } = useOrders();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -36,24 +40,56 @@ function CardapioContent() {
     }
   }, [searchParams, setComandaNumber]);
 
+  // Filtrar produtos por busca
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    const query = searchQuery.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   const productsByCategory = useMemo(() => {
     return categories.map((category) => ({
       category,
-      products: products.filter((p) => p.category === category.id),
+      products: filteredProducts.filter((p) => p.category === category.id),
     }));
+  }, [filteredProducts]);
+
+  // Controlar visibilidade do botão "voltar ao topo"
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      setShowBackToTop(container.scrollTop > 300);
+    }
   }, []);
 
-  // Intersection Observer para detectar categoria visível (somente para destacar no menu)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
+
+  const scrollToTop = useCallback(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Intersection Observer para detectar categoria visível
   useEffect(() => {
     const root = scrollContainerRef.current;
     if (!root) return;
 
     const observers: IntersectionObserver[] = [];
 
+    // Usar threshold maior e rootMargin que captura elementos próximos ao topo
     const observerOptions: IntersectionObserverInit = {
       root,
-      rootMargin: "-20% 0px -70% 0px",
-      threshold: 0.1,
+      rootMargin: "-10% 0px -80% 0px",
+      threshold: 0,
     };
 
     categories.forEach((category) => {
@@ -116,7 +152,7 @@ function CardapioContent() {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col">
+    <div className="h-screen overflow-hidden flex flex-col bg-acai-purple-deep">
       <CardapioHeader comandaNumber={comandaNumber} />
 
       <div className="px-4">
@@ -127,10 +163,15 @@ function CardapioContent() {
         />
       </div>
 
+      {/* Campo de busca */}
+      <div className="px-4 py-3">
+        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      </div>
+
       {/* Container único de scroll do cardápio */}
       <main
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-4 pt-4 pb-28"
+        className="flex-1 overflow-y-auto px-4 pb-28"
       >
         {productsByCategory.map(({ category, products }) => (
           <CategorySection
@@ -141,6 +182,9 @@ function CardapioContent() {
           />
         ))}
       </main>
+
+      {/* Botão voltar ao topo */}
+      <BackToTopButton visible={showBackToTop} onClick={scrollToTop} />
 
       <CartBar onOpenCart={() => setIsCartOpen(true)} />
 
