@@ -7,10 +7,11 @@ import {
   Trash2, 
   CreditCard,
   QrCode,
-  X,
+  AlertTriangle,
   Banknote,
   Smartphone,
-  AlertTriangle
+  ChefHat,
+  User
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,11 +44,13 @@ import { useStock } from "@/contexts/StockContext";
 import { PDVCartItem, Sale } from "@/types/admin";
 import { toast } from "sonner";
 import QRCodeScanner from "./QRCodeScanner";
+import { PDVCartFAB } from "./PDVCartFAB";
+import { PDVCartDrawer } from "./PDVCartDrawer";
 
 export default function AdminPDV() {
   const { products, categories, getWholeProducts } = useProducts();
   const { portions, getActivePortions } = usePortions();
-  const { orders, readyOrders, removeReadyOrder } = useOrders();
+  const { orders, readyOrders, removeReadyOrder, addBalcaoOrder } = useOrders();
   const { addSale } = useSales();
   const { decreaseStock, decreaseFractionalStock, checkFractionalStockAvailable } = useStock();
 
@@ -60,6 +63,8 @@ export default function AdminPDV() {
   const [selectedPayment, setSelectedPayment] = useState<Sale["paymentMethod"]>("dinheiro");
   const [currentComanda, setCurrentComanda] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("products");
+  const [showMobileCart, setShowMobileCart] = useState(false);
+  const [customerName, setCustomerName] = useState("");
 
   // Filter products (only whole products for direct sale)
   const wholeProducts = getWholeProducts().filter(p => p.active !== false && p.price > 0);
@@ -83,6 +88,15 @@ export default function AdminPDV() {
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
+  }, [cart]);
+
+  const cartItemCount = useMemo(() => {
+    return cart.reduce((acc, item) => acc + item.quantity, 0);
+  }, [cart]);
+
+  // Check if any item in cart needs preparation
+  const hasItemsNeedingPreparation = useMemo(() => {
+    return cart.some(item => item.needsPreparation);
   }, [cart]);
 
   // Check if portion has sufficient stock
@@ -120,6 +134,7 @@ export default function AdminPDV() {
           unitPrice: product.price,
           quantity: 1,
           isPortion: false,
+          needsPreparation: product.needsPreparation || false,
         },
       ]);
     }
@@ -159,6 +174,7 @@ export default function AdminPDV() {
           quantity: 1,
           isPortion: true,
           portionId: portion.id,
+          needsPreparation: true, // Portions always need preparation
         },
       ]);
     }
@@ -202,6 +218,7 @@ export default function AdminPDV() {
   const clearCart = () => {
     setCart([]);
     setCurrentComanda(null);
+    setCustomerName("");
   };
 
   const handleOpenQRScanner = () => {
@@ -216,7 +233,7 @@ export default function AdminPDV() {
     }
 
     const allOrders = [...orders, ...readyOrders];
-    const comandaOrders = allOrders.filter((o) => o.comandaNumber === comandaNumber);
+    const comandaOrders = allOrders.filter((o) => o.comandaNumber === comandaNumber && o.orderType === "comanda");
 
     if (comandaOrders.length === 0) {
       toast.error(`Nenhum pedido encontrado para a comanda #${comandaNumber}`);
@@ -240,6 +257,7 @@ export default function AdminPDV() {
             productName: item.product.name,
             unitPrice: item.product.price,
             quantity: item.quantity,
+            needsPreparation: item.product.needsPreparation,
           });
         }
       });
@@ -325,24 +343,31 @@ export default function AdminPDV() {
       }
     });
 
-    // If it's a comanda, remove the ready orders
+    // If it's a comanda from cardapio, remove the ready orders
     if (currentComanda) {
       const comandaReadyOrders = readyOrders.filter(
-        (o) => o.comandaNumber === currentComanda
+        (o) => o.comandaNumber === currentComanda && o.orderType === "comanda"
       );
       comandaReadyOrders.forEach((order) => {
         removeReadyOrder(order.id);
       });
     }
 
-    toast.success(
-      currentComanda
-        ? `Comanda #${currentComanda} finalizada!`
-        : "Venda finalizada com sucesso!"
-    );
+    // If there are items needing preparation AND it's a PDV sale (not comanda), create balcao order
+    if (!currentComanda && hasItemsNeedingPreparation) {
+      const balcaoNumber = addBalcaoOrder(cart, customerName || undefined);
+      toast.success(`Venda finalizada! Pedido BALCÃO #${balcaoNumber} enviado para cozinha.`);
+    } else {
+      toast.success(
+        currentComanda
+          ? `Comanda #${currentComanda} finalizada!`
+          : "Venda finalizada com sucesso!"
+      );
+    }
 
     clearCart();
     setShowPaymentModal(false);
+    setShowMobileCart(false);
   };
 
   const paymentMethods = [
@@ -353,7 +378,7 @@ export default function AdminPDV() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 lg:pb-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">PDV - Ponto de Venda</h1>
@@ -416,9 +441,14 @@ export default function AdminPDV() {
                   onClick={() => addToCart(product)}
                   className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-left hover:bg-secondary/80 transition-all active:scale-95"
                 >
-                  <p className="font-medium text-foreground text-sm line-clamp-2 mb-1">
-                    {product.name}
-                  </p>
+                  <div className="flex items-start justify-between gap-1 mb-1">
+                    <p className="font-medium text-foreground text-sm line-clamp-2">
+                      {product.name}
+                    </p>
+                    {product.needsPreparation && (
+                      <ChefHat className="w-3 h-3 text-acai-yellow shrink-0" />
+                    )}
+                  </div>
                   <p className="text-primary font-bold">R$ {product.price.toFixed(2)}</p>
                 </button>
               ))}
@@ -467,8 +497,8 @@ export default function AdminPDV() {
           )}
         </div>
 
-        {/* Cart Section */}
-        <div className="lg:col-span-1">
+        {/* Cart Section - Desktop only */}
+        <div className="lg:col-span-1 hidden lg:block">
           <Card className="bg-card/80 backdrop-blur-sm border-border/50 sticky top-4">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between text-foreground">
@@ -486,7 +516,7 @@ export default function AdminPDV() {
             <CardContent className="space-y-4">
               {cart.length > 0 ? (
                 <>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {cart.map((item) => (
                       <div
                         key={item.isPortion ? item.portionId : item.productId}
@@ -501,6 +531,9 @@ export default function AdminPDV() {
                               <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1 rounded">
                                 Porção
                               </span>
+                            )}
+                            {item.needsPreparation && (
+                              <ChefHat className="w-3 h-3 text-acai-yellow shrink-0" />
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -540,6 +573,25 @@ export default function AdminPDV() {
                     ))}
                   </div>
 
+                  {/* Customer name field - only for PDV sales with preparation items */}
+                  {!currentComanda && hasItemsNeedingPreparation && (
+                    <div className="space-y-2 p-3 bg-acai-yellow/10 rounded-lg border border-acai-yellow/30">
+                      <div className="flex items-center gap-2 text-sm text-acai-yellow-dark">
+                        <ChefHat className="w-4 h-4" />
+                        <span>Itens serão enviados para cozinha</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Nome do cliente (opcional)"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="bg-secondary border-border h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-lg font-medium text-foreground">Total</span>
@@ -575,6 +627,30 @@ export default function AdminPDV() {
           </Card>
         </div>
       </div>
+
+      {/* Mobile Cart FAB */}
+      <PDVCartFAB
+        itemCount={cartItemCount}
+        total={cartTotal}
+        onClick={() => setShowMobileCart(true)}
+      />
+
+      {/* Mobile Cart Drawer */}
+      <PDVCartDrawer
+        isOpen={showMobileCart}
+        onClose={() => setShowMobileCart(false)}
+        cart={cart}
+        cartTotal={cartTotal}
+        customerName={customerName}
+        setCustomerName={setCustomerName}
+        hasItemsNeedingPreparation={hasItemsNeedingPreparation && !currentComanda}
+        onUpdateQuantity={updateCartQuantity}
+        onRemoveItem={removeFromCart}
+        onFinalize={() => {
+          setShowMobileCart(false);
+          setShowPaymentModal(true);
+        }}
+      />
 
       {/* QR Scanner Modal */}
       <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
@@ -642,6 +718,12 @@ export default function AdminPDV() {
               </p>
               {currentComanda && (
                 <p className="text-sm text-accent mt-1">Comanda #{currentComanda}</p>
+              )}
+              {!currentComanda && hasItemsNeedingPreparation && (
+                <div className="mt-2 flex items-center justify-center gap-2 text-sm text-acai-yellow">
+                  <ChefHat className="w-4 h-4" />
+                  <span>Pedido será enviado para cozinha</span>
+                </div>
               )}
             </div>
 

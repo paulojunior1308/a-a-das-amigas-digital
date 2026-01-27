@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { CartItem } from "@/types/menu";
+import { CartItem, OrderType } from "@/types/menu";
+import { PDVCartItem } from "@/types/admin";
 
 export interface Order {
   id: string;
@@ -8,14 +9,27 @@ export interface Order {
   status: "preparing" | "ready";
   createdAt: Date;
   readyAt?: Date;
+  orderType: OrderType; // "comanda" = mesa/QRCode, "balcao" = PDV counter
+  customerName?: string; // Optional customer name for counter orders
+  origin: "cardapio" | "pdv"; // Where the order came from
+}
+
+// Kitchen order item from PDV
+export interface KitchenOrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  observation?: string;
 }
 
 interface OrdersContextType {
   orders: Order[];
   readyOrders: Order[];
   addOrder: (items: CartItem[], comandaNumber: number) => void;
+  addBalcaoOrder: (items: PDVCartItem[], customerName?: string) => number; // Returns the balcao order number
   markAsReady: (orderId: string) => void;
   removeReadyOrder: (orderId: string) => void;
+  nextBalcaoNumber: number;
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
@@ -27,34 +41,29 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       id: "demo-1",
       comandaNumber: 5,
       items: [
-        { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai", productType: "whole" }, quantity: 2, observation: "Sem granola" },
-        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole" }, quantity: 1, observation: "" },
+        { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai", productType: "whole", needsPreparation: true }, quantity: 2, observation: "Sem granola" },
+        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole", needsPreparation: true }, quantity: 1, observation: "" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 5 * 60000),
+      orderType: "comanda",
+      origin: "cardapio",
     },
     {
       id: "demo-2",
       comandaNumber: 12,
       items: [
-        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole" }, quantity: 3, observation: "Bem passado" },
+        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 3, observation: "Bem passado" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 3 * 60000),
-    },
-    {
-      id: "demo-3",
-      comandaNumber: 8,
-      items: [
-        { product: { id: "4", name: "Suco de Laranja", description: "Natural", price: 7, category: "bebidas", productType: "whole" }, quantity: 2, observation: "Sem gelo" },
-        { product: { id: "5", name: "Água Mineral", description: "500ml", price: 4, category: "bebidas", productType: "whole" }, quantity: 1, observation: "" },
-      ],
-      status: "preparing",
-      createdAt: new Date(Date.now() - 1 * 60000),
+      orderType: "comanda",
+      origin: "cardapio",
     },
   ]);
   
   const [readyOrders, setReadyOrders] = useState<Order[]>([]);
+  const [nextBalcaoNumber, setNextBalcaoNumber] = useState(1);
 
   const addOrder = useCallback((items: CartItem[], comandaNumber: number) => {
     const newOrder: Order = {
@@ -63,10 +72,51 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       items,
       status: "preparing",
       createdAt: new Date(),
+      orderType: "comanda",
+      origin: "cardapio",
     };
     
     setOrders((prev) => [...prev, newOrder]);
   }, []);
+
+  const addBalcaoOrder = useCallback((items: PDVCartItem[], customerName?: string) => {
+    const currentNumber = nextBalcaoNumber;
+    
+    // Convert PDVCartItem to CartItem for kitchen display
+    const cartItems: CartItem[] = items
+      .filter(item => item.needsPreparation)
+      .map(item => ({
+        product: {
+          id: item.productId,
+          name: item.productName,
+          description: "",
+          price: item.unitPrice,
+          category: "",
+          productType: "whole" as const,
+          needsPreparation: true,
+        },
+        quantity: item.quantity,
+        observation: item.observation || "",
+      }));
+
+    if (cartItems.length > 0) {
+      const newOrder: Order = {
+        id: `balcao-${Date.now()}`,
+        comandaNumber: currentNumber,
+        items: cartItems,
+        status: "preparing",
+        createdAt: new Date(),
+        orderType: "balcao",
+        customerName,
+        origin: "pdv",
+      };
+      
+      setOrders((prev) => [...prev, newOrder]);
+      setNextBalcaoNumber((prev) => prev + 1);
+    }
+    
+    return currentNumber;
+  }, [nextBalcaoNumber]);
 
   const markAsReady = useCallback((orderId: string) => {
     setOrders((prev) => {
@@ -93,8 +143,10 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
         orders,
         readyOrders,
         addOrder,
+        addBalcaoOrder,
         markAsReady,
         removeReadyOrder,
+        nextBalcaoNumber,
       }}
     >
       {children}

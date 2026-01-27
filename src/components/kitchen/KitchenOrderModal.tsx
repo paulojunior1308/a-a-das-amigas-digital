@@ -7,7 +7,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Clock, MessageSquare, CreditCard } from "lucide-react";
+import { Check, Clock, MessageSquare, CreditCard, Store, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface KitchenOrderModalProps {
   order: Order | null;
@@ -25,6 +26,7 @@ export function KitchenOrderModal({
   if (!order) return null;
 
   const minutesAgo = Math.floor((Date.now() - order.createdAt.getTime()) / 60000);
+  const isBalcao = order.orderType === "balcao";
 
   const handleMarkReady = () => {
     onMarkReady(order.id);
@@ -33,13 +35,39 @@ export function KitchenOrderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg mx-auto bg-card border-2 border-acai-purple">
+      <DialogContent className={cn(
+        "max-w-lg mx-auto border-2",
+        isBalcao 
+          ? "bg-gradient-to-br from-orange-50 to-card border-orange-400" 
+          : "bg-card border-acai-purple"
+      )}>
         <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CreditCard className="w-6 h-6 text-acai-purple" />
-              <DialogTitle className="text-4xl font-bold text-acai-purple-deep">
-                Comanda #{order.comandaNumber.toString().padStart(2, "0")}
+              {/* Order type badge */}
+              <div className={cn(
+                "px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1",
+                isBalcao 
+                  ? "bg-orange-500 text-white" 
+                  : "bg-acai-purple text-white"
+              )}>
+                {isBalcao ? (
+                  <>
+                    <Store className="w-4 h-4" />
+                    BALCÃO
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    MESA
+                  </>
+                )}
+              </div>
+              <DialogTitle className={cn(
+                "text-4xl font-bold",
+                isBalcao ? "text-orange-600" : "text-acai-purple-deep"
+              )}>
+                #{order.comandaNumber.toString().padStart(2, "0")}
               </DialogTitle>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -47,6 +75,14 @@ export function KitchenOrderModal({
               <span className="text-lg">{minutesAgo} min</span>
             </div>
           </div>
+          
+          {/* Customer name for balcao */}
+          {isBalcao && order.customerName && (
+            <div className="flex items-center gap-2 mt-3 text-orange-700">
+              <User className="w-5 h-5" />
+              <span className="text-lg font-medium">{order.customerName}</span>
+            </div>
+          )}
         </DialogHeader>
 
         <ScrollArea className="max-h-[50vh] pr-4">
@@ -54,13 +90,23 @@ export function KitchenOrderModal({
             {order.items.map((item, index) => (
               <div
                 key={index}
-                className="p-4 bg-muted rounded-xl border border-border"
+                className={cn(
+                  "p-4 rounded-xl border",
+                  isBalcao 
+                    ? "bg-orange-50 border-orange-200" 
+                    : "bg-muted border-border"
+                )}
               >
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="text-xl font-bold text-foreground">
                     {item.product.name}
                   </h4>
-                  <span className="text-2xl font-bold text-acai-purple-deep bg-acai-lilac px-3 py-1 rounded-full">
+                  <span className={cn(
+                    "text-2xl font-bold px-3 py-1 rounded-full",
+                    isBalcao 
+                      ? "bg-orange-200 text-orange-800" 
+                      : "bg-acai-lilac text-acai-purple-deep"
+                  )}>
                     x{item.quantity}
                   </span>
                 </div>
@@ -82,10 +128,15 @@ export function KitchenOrderModal({
           <Button
             onClick={handleMarkReady}
             size="lg"
-            className="w-full h-16 text-xl font-bold bg-green-500 hover:bg-green-600 text-white rounded-xl"
+            className={cn(
+              "w-full h-16 text-xl font-bold rounded-xl",
+              isBalcao
+                ? "bg-orange-500 hover:bg-orange-600 text-white"
+                : "bg-green-500 hover:bg-green-600 text-white"
+            )}
           >
             <Check className="w-6 h-6 mr-2" />
-            Marcar como Pronto
+            {isBalcao ? "Pronto – Balcão" : "Marcar como Pronto"}
           </Button>
         </div>
       </DialogContent>

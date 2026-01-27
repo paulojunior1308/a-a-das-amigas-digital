@@ -1,13 +1,18 @@
 import { useOrders } from "@/contexts/OrdersContext";
 import { TVOrderDisplay } from "@/components/tv/TVOrderDisplay";
 import { ChefHat, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import logoAcai from "@/assets/logo-acai.jpg";
 
 export default function TV() {
   const { readyOrders } = useOrders();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+
+  // Filter only comanda orders (not balcao - those are picked up directly at counter)
+  const tvOrders = useMemo(() => {
+    return readyOrders.filter(order => order.orderType === "comanda");
+  }, [readyOrders]);
 
   // Update time every second
   useEffect(() => {
@@ -17,8 +22,8 @@ export default function TV() {
 
   // Track new orders for animation
   useEffect(() => {
-    if (readyOrders.length > 0) {
-      const latestOrder = readyOrders[readyOrders.length - 1];
+    if (tvOrders.length > 0) {
+      const latestOrder = tvOrders[tvOrders.length - 1];
       if (latestOrder.readyAt && Date.now() - latestOrder.readyAt.getTime() < 5000) {
         setNewOrderIds((prev) => new Set([...prev, latestOrder.id]));
         const timer = setTimeout(() => {
@@ -31,7 +36,7 @@ export default function TV() {
         return () => clearTimeout(timer);
       }
     }
-  }, [readyOrders]);
+  }, [tvOrders]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("pt-BR", {
@@ -65,7 +70,7 @@ export default function TV() {
       </header>
 
       {/* Ready Orders */}
-      {readyOrders.length === 0 ? (
+      {tvOrders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-center">
           <div className="w-32 h-32 bg-acai-lilac/20 rounded-full flex items-center justify-center mb-8 animate-pulse">
             <ChefHat className="w-16 h-16 text-acai-lilac" />
@@ -79,7 +84,7 @@ export default function TV() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {readyOrders.map((order) => (
+          {tvOrders.map((order) => (
             <TVOrderDisplay
               key={order.id}
               order={order}
@@ -93,7 +98,7 @@ export default function TV() {
       <footer className="fixed bottom-0 left-0 right-0 bg-acai-purple-deep/80 backdrop-blur-sm p-4">
         <div className="flex items-center justify-center gap-4 text-acai-lilac">
           <span className="text-lg">
-            {readyOrders.length} {readyOrders.length === 1 ? "pedido pronto" : "pedidos prontos"}
+            {tvOrders.length} {tvOrders.length === 1 ? "pedido pronto" : "pedidos prontos"}
           </span>
         </div>
       </footer>
