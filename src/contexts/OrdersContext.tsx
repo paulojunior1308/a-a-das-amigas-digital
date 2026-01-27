@@ -36,13 +36,25 @@ const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
 export function OrdersProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([
-    // Pedidos de exemplo para demonstração
+    // === PEDIDOS DO CARDÁPIO (MESA/COMANDA) ===
     {
-      id: "demo-1",
+      id: "demo-cardapio-1",
       comandaNumber: 5,
       items: [
         { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai", productType: "whole", needsPreparation: true }, quantity: 2, observation: "Sem granola" },
-        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole", needsPreparation: true }, quantity: 1, observation: "" },
+        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole", needsPreparation: true }, quantity: 1, observation: "Com leite ninho extra" },
+      ],
+      status: "preparing",
+      createdAt: new Date(Date.now() - 8 * 60000),
+      orderType: "comanda",
+      origin: "cardapio",
+    },
+    {
+      id: "demo-cardapio-2",
+      comandaNumber: 12,
+      items: [
+        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 3, observation: "Bem passado" },
+        { product: { id: "4", name: "Pastel de Queijo", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 2, observation: "" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 5 * 60000),
@@ -50,15 +62,66 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       origin: "cardapio",
     },
     {
-      id: "demo-2",
-      comandaNumber: 12,
+      id: "demo-cardapio-3",
+      comandaNumber: 8,
       items: [
-        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 3, observation: "Bem passado" },
+        { product: { id: "5", name: "Açaí 700ml", description: "Açaí premium", price: 24, category: "acai", productType: "whole", needsPreparation: true }, quantity: 1, observation: "Capricha no morango!" },
+      ],
+      status: "preparing",
+      createdAt: new Date(Date.now() - 2 * 60000),
+      orderType: "comanda",
+      origin: "cardapio",
+    },
+    // === PEDIDOS DO PDV (BALCÃO) ===
+    {
+      id: "demo-balcao-1",
+      comandaNumber: 1,
+      items: [
+        { product: { id: "6", name: "Batata P", description: "Porção pequena", price: 15, category: "porcoes", productType: "whole", needsPreparation: true }, quantity: 2, observation: "" },
+        { product: { id: "7", name: "Batata c/ Cheddar", description: "Com cheddar cremoso", price: 22, category: "porcoes", productType: "whole", needsPreparation: true }, quantity: 1, observation: "Bastante cheddar" },
+      ],
+      status: "preparing",
+      createdAt: new Date(Date.now() - 6 * 60000),
+      orderType: "balcao",
+      customerName: "João",
+      origin: "pdv",
+    },
+    {
+      id: "demo-balcao-2",
+      comandaNumber: 2,
+      items: [
+        { product: { id: "8", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole", needsPreparation: true }, quantity: 1, observation: "Sem banana" },
+        { product: { id: "9", name: "Pastel de Frango", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 2, observation: "" },
+      ],
+      status: "preparing",
+      createdAt: new Date(Date.now() - 4 * 60000),
+      orderType: "balcao",
+      customerName: "Maria",
+      origin: "pdv",
+    },
+    {
+      id: "demo-balcao-3",
+      comandaNumber: 3,
+      items: [
+        { product: { id: "10", name: "Batata G", description: "Porção grande", price: 25, category: "porcoes", productType: "whole", needsPreparation: true }, quantity: 1, observation: "" },
+      ],
+      status: "preparing",
+      createdAt: new Date(Date.now() - 1 * 60000),
+      orderType: "balcao",
+      origin: "pdv",
+    },
+    {
+      id: "demo-balcao-4",
+      comandaNumber: 4,
+      items: [
+        { product: { id: "11", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai", productType: "whole", needsPreparation: true }, quantity: 3, observation: "1 sem granola, 2 normais" },
+        { product: { id: "12", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole", needsPreparation: true }, quantity: 4, observation: "Bem sequinhos" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 3 * 60000),
-      orderType: "comanda",
-      origin: "cardapio",
+      orderType: "balcao",
+      customerName: "Retirada - Ana",
+      origin: "pdv",
     },
   ]);
   
