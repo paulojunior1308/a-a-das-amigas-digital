@@ -20,6 +20,7 @@ export const products: Product[] = [
     price: 9.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -29,6 +30,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -38,6 +40,7 @@ export const products: Product[] = [
     price: 20.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -47,6 +50,7 @@ export const products: Product[] = [
     price: 9.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -56,6 +60,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -65,6 +70,7 @@ export const products: Product[] = [
     price: 20.00,
     category: "acai",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
@@ -76,6 +82,7 @@ export const products: Product[] = [
     price: 15.00,
     category: "lanches",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -85,6 +92,7 @@ export const products: Product[] = [
     price: 22.00,
     category: "lanches",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
@@ -96,6 +104,7 @@ export const products: Product[] = [
     price: 8.00,
     category: "hotdog",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -105,6 +114,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "hotdog",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -114,6 +124,7 @@ export const products: Product[] = [
     price: 17.00,
     category: "hotdog",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
@@ -125,6 +136,7 @@ export const products: Product[] = [
     price: 26.00,
     category: "porcoes",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -134,6 +146,7 @@ export const products: Product[] = [
     price: 40.00,
     category: "porcoes",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -143,6 +156,7 @@ export const products: Product[] = [
     price: 47.00,
     category: "porcoes",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -152,6 +166,7 @@ export const products: Product[] = [
     price: 32.00,
     category: "porcoes",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
@@ -163,6 +178,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -172,6 +188,7 @@ export const products: Product[] = [
     price: 17.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -181,6 +198,7 @@ export const products: Product[] = [
     price: 14.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -190,6 +208,7 @@ export const products: Product[] = [
     price: 20.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -199,6 +218,7 @@ export const products: Product[] = [
     price: 16.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -208,6 +228,7 @@ export const products: Product[] = [
     price: 25.00,
     category: "batata",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
@@ -219,6 +240,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -228,6 +250,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -237,6 +260,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -246,6 +270,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -255,6 +280,7 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
   {
@@ -264,10 +290,11 @@ export const products: Product[] = [
     price: 12.00,
     category: "pasteis",
     productType: "whole",
+    needsPreparation: true,
     active: true,
   },
 
-  // Bebidas
+  // Bebidas (não precisam de preparo)
   {
     id: "refri-lata",
     name: "Refrigerante Lata 350ml",
@@ -275,6 +302,7 @@ export const products: Product[] = [
     price: 6.00,
     category: "bebidas",
     productType: "whole",
+    needsPreparation: false,
     active: true,
   },
   {
@@ -284,6 +312,7 @@ export const products: Product[] = [
     price: 6.00,
     category: "bebidas",
     productType: "whole",
+    needsPreparation: false,
     active: true,
   },
   {
@@ -293,6 +322,7 @@ export const products: Product[] = [
     price: 15.00,
     category: "bebidas",
     productType: "whole",
+    needsPreparation: false,
     active: true,
   },
   {
@@ -302,6 +332,7 @@ export const products: Product[] = [
     price: 4.00,
     category: "bebidas",
     productType: "whole",
+    needsPreparation: false,
     active: true,
   },
 

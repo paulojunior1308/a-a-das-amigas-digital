@@ -29,6 +29,8 @@ export interface PDVCartItem {
   quantity: number;
   isPortion?: boolean;
   portionId?: string;
+  needsPreparation?: boolean;
+  observation?: string;
 }
 
 // Portion/Dose composition ingredient

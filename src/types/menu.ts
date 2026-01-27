@@ -1,5 +1,6 @@
 export type ProductType = "whole" | "fractional";
 export type MeasureUnit = "g" | "ml";
+export type OrderType = "comanda" | "balcao";
 
 export interface Product {
   id: string;
@@ -10,6 +11,7 @@ export interface Product {
   costPrice?: number;
   image?: string;
   active?: boolean;
+  needsPreparation?: boolean; // Flag to indicate if product needs kitchen preparation
   // Product type fields
   productType: ProductType;
   // Fractional product fields
