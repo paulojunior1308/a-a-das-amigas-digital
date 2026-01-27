@@ -12,6 +12,9 @@ interface ProductsContextType {
   updateCategory: (id: string, category: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   getProductsByCategory: (categoryId: string) => Product[];
+  getWholeProducts: () => Product[];
+  getFractionalProducts: () => Product[];
+  getActiveProducts: () => Product[];
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -69,6 +72,21 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     [products]
   );
 
+  const getWholeProducts = useCallback(
+    () => products.filter((p) => p.productType === "whole"),
+    [products]
+  );
+
+  const getFractionalProducts = useCallback(
+    () => products.filter((p) => p.productType === "fractional"),
+    [products]
+  );
+
+  const getActiveProducts = useCallback(
+    () => products.filter((p) => p.active !== false),
+    [products]
+  );
+
   return (
     <ProductsContext.Provider
       value={{
@@ -81,6 +99,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         updateCategory,
         deleteCategory,
         getProductsByCategory,
+        getWholeProducts,
+        getFractionalProducts,
+        getActiveProducts,
       }}
     >
       {children}

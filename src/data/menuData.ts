@@ -8,6 +8,7 @@ export const categories: Category[] = [
   { id: "batata", name: "Batata Frita" },
   { id: "pasteis", name: "Pastéis" },
   { id: "bebidas", name: "Bebidas" },
+  { id: "insumos", name: "Insumos" },
 ];
 
 export const products: Product[] = [
@@ -18,6 +19,8 @@ export const products: Product[] = [
     description: "1 fruta + leite condensado + 3 acompanhamentos",
     price: 9.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
   {
     id: "acai-300",
@@ -25,6 +28,8 @@ export const products: Product[] = [
     description: "2 frutas + leite condensado + 3 acompanhamentos",
     price: 12.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
   {
     id: "acai-500",
@@ -32,6 +37,8 @@ export const products: Product[] = [
     description: "3 frutas + leite condensado + 3 acompanhamentos",
     price: 20.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
   {
     id: "suco-acai-300",
@@ -39,6 +46,8 @@ export const products: Product[] = [
     description: "Acompanha leite condensado",
     price: 9.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
   {
     id: "suco-acai-500",
@@ -46,6 +55,8 @@ export const products: Product[] = [
     description: "Acompanha leite condensado",
     price: 12.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
   {
     id: "suco-acai-1l",
@@ -53,6 +64,8 @@ export const products: Product[] = [
     description: "Acompanha leite condensado",
     price: 20.00,
     category: "acai",
+    productType: "whole",
+    active: true,
   },
 
   // Lanches
@@ -62,6 +75,8 @@ export const products: Product[] = [
     description: "Hambúrguer, alface, tomate, mussarela, ketchup e maionese",
     price: 15.00,
     category: "lanches",
+    productType: "whole",
+    active: true,
   },
   {
     id: "combo-x-burguer",
@@ -69,6 +84,8 @@ export const products: Product[] = [
     description: "X-Burguer + Batata frita + Refrigerante 350ml",
     price: 22.00,
     category: "lanches",
+    productType: "whole",
+    active: true,
   },
 
   // Hot-Dog
@@ -78,6 +95,8 @@ export const products: Product[] = [
     description: "1 salsicha, purê, salada, batata palha, ketchup, mostarda, barbecue e maionese",
     price: 8.00,
     category: "hotdog",
+    productType: "whole",
+    active: true,
   },
   {
     id: "dog-duplo",
@@ -85,6 +104,8 @@ export const products: Product[] = [
     description: "2 salsichas, purê, salada, batata palha, ketchup, mostarda, barbecue e maionese",
     price: 12.00,
     category: "hotdog",
+    productType: "whole",
+    active: true,
   },
   {
     id: "dog-marmita",
@@ -92,6 +113,8 @@ export const products: Product[] = [
     description: "2 salsichas, purê, salada, batata palha, cheddar e queijo ralado",
     price: 17.00,
     category: "hotdog",
+    productType: "whole",
+    active: true,
   },
 
   // Porções
@@ -101,6 +124,8 @@ export const products: Product[] = [
     description: "Linguiça calabresa, cebola e farofa",
     price: 26.00,
     category: "porcoes",
+    productType: "whole",
+    active: true,
   },
   {
     id: "frango-passarinho",
@@ -108,6 +133,8 @@ export const products: Product[] = [
     description: "Frango temperado e alho frito",
     price: 40.00,
     category: "porcoes",
+    productType: "whole",
+    active: true,
   },
   {
     id: "costelinha",
@@ -115,6 +142,8 @@ export const products: Product[] = [
     description: "Costela, cebola e barbecue",
     price: 47.00,
     category: "porcoes",
+    productType: "whole",
+    active: true,
   },
   {
     id: "codorninha",
@@ -122,6 +151,8 @@ export const products: Product[] = [
     description: "4 codorninhas, farofa e vinagrete",
     price: 32.00,
     category: "porcoes",
+    productType: "whole",
+    active: true,
   },
 
   // Batata Frita
@@ -131,6 +162,8 @@ export const products: Product[] = [
     description: "Batata frita com sal",
     price: 12.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
   {
     id: "batata-classica-g",
@@ -138,6 +171,8 @@ export const products: Product[] = [
     description: "Batata frita com sal",
     price: 17.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
   {
     id: "batata-cremosa-p",
@@ -145,6 +180,8 @@ export const products: Product[] = [
     description: "Cheddar, ketchup, maionese, orégano e queijo parmesão",
     price: 14.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
   {
     id: "batata-cremosa-g",
@@ -152,6 +189,8 @@ export const products: Product[] = [
     description: "Cheddar, ketchup, maionese, orégano e queijo parmesão",
     price: 20.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
   {
     id: "batata-bacon-p",
@@ -159,6 +198,8 @@ export const products: Product[] = [
     description: "Cheddar, ketchup, maionese, orégano, queijo parmesão e bacon",
     price: 16.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
   {
     id: "batata-bacon-g",
@@ -166,6 +207,8 @@ export const products: Product[] = [
     description: "Cheddar, ketchup, maionese, orégano, queijo parmesão e bacon",
     price: 25.00,
     category: "batata",
+    productType: "whole",
+    active: true,
   },
 
   // Pastéis
@@ -175,6 +218,8 @@ export const products: Product[] = [
     description: "Frango, catupiry, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
   {
     id: "pastel-frango-queijo",
@@ -182,6 +227,8 @@ export const products: Product[] = [
     description: "Frango, mussarela, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
   {
     id: "pastel-carne",
@@ -189,6 +236,8 @@ export const products: Product[] = [
     description: "Carne, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
   {
     id: "pastel-carne-queijo",
@@ -196,6 +245,8 @@ export const products: Product[] = [
     description: "Carne, mussarela, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
   {
     id: "pastel-queijo",
@@ -203,6 +254,8 @@ export const products: Product[] = [
     description: "Mussarela, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
   {
     id: "pastel-pizza",
@@ -210,6 +263,8 @@ export const products: Product[] = [
     description: "Mussarela, tomate, azeitona verde e orégano",
     price: 12.00,
     category: "pasteis",
+    productType: "whole",
+    active: true,
   },
 
   // Bebidas
@@ -219,6 +274,8 @@ export const products: Product[] = [
     description: "Coca-Cola, Guaraná, Fanta ou Sprite",
     price: 6.00,
     category: "bebidas",
+    productType: "whole",
+    active: true,
   },
   {
     id: "suco-lata",
@@ -226,6 +283,8 @@ export const products: Product[] = [
     description: "Diversos sabores",
     price: 6.00,
     category: "bebidas",
+    productType: "whole",
+    active: true,
   },
   {
     id: "refri-2l",
@@ -233,6 +292,8 @@ export const products: Product[] = [
     description: "Coca-Cola, Guaraná ou Fanta",
     price: 15.00,
     category: "bebidas",
+    productType: "whole",
+    active: true,
   },
   {
     id: "agua-mineral",
@@ -240,5 +301,61 @@ export const products: Product[] = [
     description: "Com ou sem gás",
     price: 4.00,
     category: "bebidas",
+    productType: "whole",
+    active: true,
+  },
+
+  // Insumos (Produtos Fracionados)
+  {
+    id: "batata-congelada",
+    name: "Batata Congelada",
+    description: "Batata pré-frita congelada",
+    price: 0, // Insumo - não vendido diretamente
+    costPrice: 25.00,
+    category: "insumos",
+    productType: "fractional",
+    measureUnit: "g",
+    unitVolume: 2000, // 2kg por saco
+    stockUnits: 5, // 5 sacos
+    active: true,
+  },
+  {
+    id: "cheddar-liquido",
+    name: "Cheddar Líquido",
+    description: "Molho de queijo cheddar",
+    price: 0,
+    costPrice: 18.00,
+    category: "insumos",
+    productType: "fractional",
+    measureUnit: "ml",
+    unitVolume: 1000, // 1L por embalagem
+    stockUnits: 8,
+    active: true,
+  },
+  {
+    id: "bacon-picado",
+    name: "Bacon Picado",
+    description: "Bacon em cubos",
+    price: 0,
+    costPrice: 32.00,
+    category: "insumos",
+    productType: "fractional",
+    measureUnit: "g",
+    unitVolume: 1000, // 1kg por pacote
+    stockUnits: 3,
+    active: true,
+  },
+  {
+    id: "calda-chocolate",
+    name: "Calda de Chocolate",
+    description: "Cobertura de chocolate",
+    price: 0,
+    costPrice: 15.00,
+    category: "insumos",
+    productType: "fractional",
+    measureUnit: "ml",
+    unitVolume: 500,
+    stockUnits: 10,
+    active: true,
   },
 ];

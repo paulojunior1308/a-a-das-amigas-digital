@@ -5,12 +5,12 @@ import {
   Pencil, 
   Trash2, 
   AlertTriangle,
-  Search,
-  X
+  Search
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -33,39 +33,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { useProducts } from "@/contexts/ProductsContext";
 import { useStock } from "@/contexts/StockContext";
-import { Product } from "@/types/menu";
+import { Product, ProductType, MeasureUnit } from "@/types/menu";
 import { toast } from "sonner";
 
 interface ProductFormData {
   name: string;
   description: string;
   price: string;
+  costPrice: string;
   category: string;
+  productType: ProductType;
+  measureUnit: MeasureUnit;
+  unitVolume: string;
+  stockUnits: string;
+  active: boolean;
 }
+
+const defaultFormData: ProductFormData = {
+  name: "",
+  description: "",
+  price: "",
+  costPrice: "",
+  category: "",
+  productType: "whole",
+  measureUnit: "g",
+  unitVolume: "",
+  stockUnits: "",
+  active: true,
+};
 
 export default function AdminStock() {
   const { products, categories, addProduct, updateProduct, deleteProduct, addCategory } = useProducts();
-  const { stock, updateStock, setMinQuantity, getStockForProduct } = useStock();
+  const { stock, updateStock, setMinQuantity } = useStock();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [productForm, setProductForm] = useState<ProductFormData>({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-  });
+  const [productForm, setProductForm] = useState<ProductFormData>(defaultFormData);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "all" || product.category === filterCategory;
-    return matchesSearch && matchesCategory;
+    const matchesType = filterType === "all" || product.productType === filterType;
+    return matchesSearch && matchesCategory && matchesType;
   });
 
   const handleOpenProductModal = (product?: Product) => {
@@ -75,36 +93,58 @@ export default function AdminStock() {
         name: product.name,
         description: product.description,
         price: product.price.toString(),
+        costPrice: product.costPrice?.toString() || "",
         category: product.category,
+        productType: product.productType,
+        measureUnit: product.measureUnit || "g",
+        unitVolume: product.unitVolume?.toString() || "",
+        stockUnits: product.stockUnits?.toString() || "",
+        active: product.active !== false,
       });
     } else {
       setEditingProduct(null);
-      setProductForm({ name: "", description: "", price: "", category: categories[0]?.id || "" });
+      setProductForm({ ...defaultFormData, category: categories[0]?.id || "" });
     }
     setShowProductModal(true);
   };
 
   const handleSaveProduct = () => {
-    if (!productForm.name || !productForm.price || !productForm.category) {
+    if (!productForm.name || !productForm.category) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
+    if (productForm.productType === "whole" && !productForm.price) {
+      toast.error("Informe o preço de venda");
+      return;
+    }
+
+    if (productForm.productType === "fractional" && (!productForm.unitVolume || !productForm.stockUnits)) {
+      toast.error("Preencha o volume da unidade e estoque inicial");
+      return;
+    }
+
+    const productData: Omit<Product, "id"> = {
+      name: productForm.name,
+      description: productForm.description,
+      price: parseFloat(productForm.price) || 0,
+      costPrice: parseFloat(productForm.costPrice) || undefined,
+      category: productForm.category,
+      productType: productForm.productType,
+      active: productForm.active,
+    };
+
+    if (productForm.productType === "fractional") {
+      productData.measureUnit = productForm.measureUnit;
+      productData.unitVolume = parseFloat(productForm.unitVolume);
+      productData.stockUnits = parseFloat(productForm.stockUnits);
+    }
+
     if (editingProduct) {
-      updateProduct(editingProduct.id, {
-        name: productForm.name,
-        description: productForm.description,
-        price: parseFloat(productForm.price),
-        category: productForm.category,
-      });
+      updateProduct(editingProduct.id, productData);
       toast.success("Produto atualizado com sucesso!");
     } else {
-      addProduct({
-        name: productForm.name,
-        description: productForm.description,
-        price: parseFloat(productForm.price),
-        category: productForm.category,
-      });
+      addProduct(productData);
       toast.success("Produto adicionado com sucesso!");
     }
 
@@ -129,22 +169,46 @@ export default function AdminStock() {
     toast.success("Categoria adicionada com sucesso!");
   };
 
-  const handleStockChange = (productId: string, value: string) => {
-    const qty = parseInt(value) || 0;
-    updateStock(productId, qty);
+  const handleStockChange = (productId: string, value: string, product: Product) => {
+    const qty = parseFloat(value) || 0;
+    if (product.productType === "fractional") {
+      // For fractional, user inputs units, we store total volume
+      const totalVolume = qty * (product.unitVolume || 1);
+      updateStock(productId, totalVolume);
+    } else {
+      updateStock(productId, qty);
+    }
   };
 
   const handleMinQtyChange = (productId: string, value: string) => {
-    const qty = parseInt(value) || 0;
+    const qty = parseFloat(value) || 0;
     setMinQuantity(productId, qty);
   };
 
-  const getStockStatus = (productId: string) => {
-    const stockItem = stock.find((s) => s.productId === productId);
-    if (!stockItem) return "normal";
-    if (stockItem.quantity === 0) return "empty";
-    if (stockItem.quantity <= stockItem.minQuantity) return "low";
-    return "normal";
+  const getStockDisplay = (product: Product, stockItem: typeof stock[0] | undefined) => {
+    if (!stockItem) return { value: 0, display: "0 un", status: "normal" as const };
+    
+    if (product.productType === "fractional") {
+      const volume = stockItem.quantity;
+      const unit = product.measureUnit || "g";
+      const display = volume >= 1000 
+        ? `${(volume / 1000).toFixed(2)} ${unit === "g" ? "kg" : "L"}`
+        : `${volume.toFixed(0)} ${unit}`;
+      
+      const status = volume === 0 ? "empty" : volume <= stockItem.minQuantity ? "low" : "normal";
+      return { value: volume, display, status };
+    } else {
+      const status = stockItem.quantity === 0 ? "empty" : stockItem.quantity <= stockItem.minQuantity ? "low" : "normal";
+      return { value: stockItem.quantity, display: `${stockItem.quantity} un`, status };
+    }
+  };
+
+  const getStockUnitsForInput = (product: Product, stockItem: typeof stock[0] | undefined) => {
+    if (!stockItem) return 0;
+    if (product.productType === "fractional" && product.unitVolume) {
+      return stockItem.quantity / product.unitVolume;
+    }
+    return stockItem.quantity;
   };
 
   return (
@@ -199,6 +263,16 @@ export default function AdminStock() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-full sm:w-40 bg-secondary border-border">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos tipos</SelectItem>
+                <SelectItem value="whole">Inteiro</SelectItem>
+                <SelectItem value="fractional">Fracionado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -217,24 +291,29 @@ export default function AdminStock() {
               <TableHeader>
                 <TableRow className="bg-secondary/50">
                   <TableHead className="text-foreground">Produto</TableHead>
+                  <TableHead className="text-foreground">Tipo</TableHead>
                   <TableHead className="text-foreground">Categoria</TableHead>
                   <TableHead className="text-foreground text-right">Preço</TableHead>
                   <TableHead className="text-foreground text-center">Estoque</TableHead>
-                  <TableHead className="text-foreground text-center">Mínimo</TableHead>
+                  <TableHead className="text-foreground text-center">Volume Un.</TableHead>
+                  <TableHead className="text-foreground text-center">Status</TableHead>
                   <TableHead className="text-foreground text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
                   const stockItem = stock.find((s) => s.productId === product.id);
-                  const status = getStockStatus(product.id);
+                  const stockDisplay = getStockDisplay(product, stockItem);
                   const category = categories.find((c) => c.id === product.category);
 
                   return (
                     <TableRow key={product.id} className="border-border">
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {status === "low" && (
+                          {stockDisplay.status === "low" && (
+                            <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+                          )}
+                          {stockDisplay.status === "empty" && (
                             <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                           )}
                           <div>
@@ -245,35 +324,57 @@ export default function AdminStock() {
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          product.productType === "fractional" 
+                            ? "bg-purple-500/20 text-purple-300"
+                            : "bg-green-500/20 text-green-300"
+                        }`}>
+                          {product.productType === "fractional" ? "Fracionado" : "Inteiro"}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-foreground">
                         {category?.name || product.category}
                       </TableCell>
                       <TableCell className="text-right font-medium text-foreground">
-                        R$ {product.price.toFixed(2)}
+                        {product.price > 0 ? `R$ ${product.price.toFixed(2)}` : "-"}
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={stockItem?.quantity || 0}
-                          onChange={(e) => handleStockChange(product.id, e.target.value)}
-                          className={`w-20 mx-auto text-center ${
-                            status === "low"
-                              ? "border-destructive bg-destructive/10"
-                              : status === "empty"
-                              ? "border-destructive bg-destructive/20"
-                              : "bg-secondary border-border"
-                          }`}
-                        />
+                        <div className="flex items-center justify-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step={product.productType === "fractional" ? "0.1" : "1"}
+                            value={getStockUnitsForInput(product, stockItem)}
+                            onChange={(e) => handleStockChange(product.id, e.target.value, product)}
+                            className={`w-20 text-center ${
+                              stockDisplay.status === "low"
+                                ? "border-yellow-500 bg-yellow-500/10"
+                                : stockDisplay.status === "empty"
+                                ? "border-destructive bg-destructive/20"
+                                : "bg-secondary border-border"
+                            }`}
+                          />
+                          <span className="text-xs text-muted-foreground w-16">
+                            {stockDisplay.display}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={stockItem?.minQuantity || 0}
-                          onChange={(e) => handleMinQtyChange(product.id, e.target.value)}
-                          className="w-20 mx-auto text-center bg-secondary border-border"
-                        />
+                      <TableCell className="text-center text-foreground">
+                        {product.productType === "fractional" && product.unitVolume
+                          ? `${product.unitVolume}${product.measureUnit}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          stockDisplay.status === "empty"
+                            ? "bg-destructive/20 text-destructive"
+                            : stockDisplay.status === "low"
+                            ? "bg-yellow-500/20 text-yellow-300"
+                            : "bg-green-500/20 text-green-300"
+                        }`}>
+                          {stockDisplay.status === "empty" ? "Esgotado" : stockDisplay.status === "low" ? "Baixo" : "Alto"}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
@@ -306,15 +407,43 @@ export default function AdminStock() {
 
       {/* Product Modal */}
       <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-        <DialogContent className="bg-card border-border max-w-md">
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {editingProduct ? "Editar Produto" : "Novo Produto"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Product Type */}
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
+              <Label className="text-muted-foreground mb-2 block">Tipo de Produto *</Label>
+              <RadioGroup
+                value={productForm.productType}
+                onValueChange={(v) => setProductForm({ ...productForm, productType: v as ProductType })}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="whole" id="whole" />
+                  <Label htmlFor="whole" className="text-foreground cursor-pointer">
+                    Produto Inteiro
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="fractional" id="fractional" />
+                  <Label htmlFor="fractional" className="text-foreground cursor-pointer">
+                    Produto Fracionado
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground mt-1">
+                {productForm.productType === "whole" 
+                  ? "Ex: lata de refrigerante, doce, copo descartável" 
+                  : "Ex: batata congelada, cheddar, bacon, calda"}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-muted-foreground mb-1 block">Nome *</Label>
               <Input
                 value={productForm.name}
                 onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
@@ -322,8 +451,9 @@ export default function AdminStock() {
                 className="bg-secondary border-border"
               />
             </div>
+
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Descrição</label>
+              <Label className="text-muted-foreground mb-1 block">Descrição</Label>
               <Input
                 value={productForm.description}
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
@@ -331,20 +461,9 @@ export default function AdminStock() {
                 className="bg-secondary border-border"
               />
             </div>
+
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Preço *</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={productForm.price}
-                onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                placeholder="0.00"
-                className="bg-secondary border-border"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Categoria *</label>
+              <Label className="text-muted-foreground mb-1 block">Categoria *</Label>
               <Select
                 value={productForm.category}
                 onValueChange={(v) => setProductForm({ ...productForm, category: v })}
@@ -360,6 +479,116 @@ export default function AdminStock() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground mb-1 block">
+                  Preço de Venda {productForm.productType === "whole" ? "*" : ""}
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={productForm.price}
+                  onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                  placeholder="0.00"
+                  className="bg-secondary border-border"
+                />
+              </div>
+              <div>
+                <Label className="text-muted-foreground mb-1 block">Preço de Custo</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={productForm.costPrice}
+                  onChange={(e) => setProductForm({ ...productForm, costPrice: e.target.value })}
+                  placeholder="0.00"
+                  className="bg-secondary border-border"
+                />
+              </div>
+            </div>
+
+            {/* Fractional-specific fields */}
+            {productForm.productType === "fractional" && (
+              <>
+                <div>
+                  <Label className="text-muted-foreground mb-1 block">Unidade de Medida *</Label>
+                  <RadioGroup
+                    value={productForm.measureUnit}
+                    onValueChange={(v) => setProductForm({ ...productForm, measureUnit: v as MeasureUnit })}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="g" id="grams" />
+                      <Label htmlFor="grams" className="text-foreground cursor-pointer">
+                        Gramas (g)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="ml" id="milliliters" />
+                      <Label htmlFor="milliliters" className="text-foreground cursor-pointer">
+                        Mililitros (ml)
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground mb-1 block">Volume da Unidade *</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={productForm.unitVolume}
+                        onChange={(e) => setProductForm({ ...productForm, unitVolume: e.target.value })}
+                        placeholder="Ex: 2000"
+                        className="bg-secondary border-border"
+                      />
+                      <span className="text-muted-foreground">{productForm.measureUnit}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Ex: saco de 2000g</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground mb-1 block">Estoque Inicial *</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={productForm.stockUnits}
+                        onChange={(e) => setProductForm({ ...productForm, stockUnits: e.target.value })}
+                        placeholder="Ex: 5"
+                        className="bg-secondary border-border"
+                      />
+                      <span className="text-muted-foreground">un</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Unidades inteiras</p>
+                  </div>
+                </div>
+
+                {productForm.unitVolume && productForm.stockUnits && (
+                  <div className="p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Volume Total Disponível</p>
+                    <p className="text-lg font-bold text-primary">
+                      {(parseFloat(productForm.unitVolume) * parseFloat(productForm.stockUnits)).toLocaleString()}{productForm.measureUnit}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="active" className="text-foreground">
+                Produto Ativo
+              </Label>
+              <Switch
+                id="active"
+                checked={productForm.active}
+                onCheckedChange={(checked) => setProductForm({ ...productForm, active: checked })}
+              />
             </div>
           </div>
           <DialogFooter>

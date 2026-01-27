@@ -27,8 +27,8 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       id: "demo-1",
       comandaNumber: 5,
       items: [
-        { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai" }, quantity: 2, observation: "Sem granola" },
-        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai" }, quantity: 1, observation: "" },
+        { product: { id: "1", name: "Açaí 300ml", description: "Açaí puro", price: 12, category: "acai", productType: "whole" }, quantity: 2, observation: "Sem granola" },
+        { product: { id: "2", name: "Açaí 500ml", description: "Açaí puro", price: 18, category: "acai", productType: "whole" }, quantity: 1, observation: "" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 5 * 60000),
@@ -37,7 +37,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       id: "demo-2",
       comandaNumber: 12,
       items: [
-        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis" }, quantity: 3, observation: "Bem passado" },
+        { product: { id: "3", name: "Pastel de Carne", description: "Pastel grande", price: 8, category: "pasteis", productType: "whole" }, quantity: 3, observation: "Bem passado" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 3 * 60000),
@@ -46,8 +46,8 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       id: "demo-3",
       comandaNumber: 8,
       items: [
-        { product: { id: "4", name: "Suco de Laranja", description: "Natural", price: 7, category: "bebidas" }, quantity: 2, observation: "Sem gelo" },
-        { product: { id: "5", name: "Água Mineral", description: "500ml", price: 4, category: "bebidas" }, quantity: 1, observation: "" },
+        { product: { id: "4", name: "Suco de Laranja", description: "Natural", price: 7, category: "bebidas", productType: "whole" }, quantity: 2, observation: "Sem gelo" },
+        { product: { id: "5", name: "Água Mineral", description: "500ml", price: 4, category: "bebidas", productType: "whole" }, quantity: 1, observation: "" },
       ],
       status: "preparing",
       createdAt: new Date(Date.now() - 1 * 60000),
