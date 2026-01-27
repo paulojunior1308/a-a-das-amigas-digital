@@ -1,6 +1,6 @@
 export interface StockItem {
   productId: string;
-  quantity: number;
+  quantity: number; // For whole products: units. For fractional: total volume
   minQuantity: number;
 }
 
@@ -27,4 +27,26 @@ export interface PDVCartItem {
   productName: string;
   unitPrice: number;
   quantity: number;
+  isPortion?: boolean;
+  portionId?: string;
+}
+
+// Portion/Dose composition ingredient
+export interface PortionIngredient {
+  productId: string;
+  productName: string;
+  consumeAmount: number; // Amount consumed in g or ml
+  unit: "g" | "ml";
+}
+
+// Portion/Dose product
+export interface Portion {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image?: string;
+  active: boolean;
+  ingredients: PortionIngredient[];
 }

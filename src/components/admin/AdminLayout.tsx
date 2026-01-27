@@ -9,7 +9,8 @@ import {
   ChefHat, 
   Monitor,
   Menu,
-  X
+  X,
+  UtensilsCrossed
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const navItems: NavItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Relatórios", icon: FileText, path: "/admin/relatorios" },
   { title: "Estoque", icon: Package, path: "/admin/estoque" },
+  { title: "Porções", icon: UtensilsCrossed, path: "/admin/porcoes" },
   { title: "PDV", icon: ShoppingCart, path: "/admin/pdv" },
 ];
 

@@ -8,9 +8,9 @@ import {
   CreditCard,
   QrCode,
   X,
-  Camera,
   Banknote,
-  Smartphone
+  Smartphone,
+  AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useProducts } from "@/contexts/ProductsContext";
+import { usePortions } from "@/contexts/PortionsContext";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useSales } from "@/contexts/SalesContext";
 import { useStock } from "@/contexts/StockContext";
@@ -38,10 +45,11 @@ import { toast } from "sonner";
 import QRCodeScanner from "./QRCodeScanner";
 
 export default function AdminPDV() {
-  const { products, categories } = useProducts();
+  const { products, categories, getWholeProducts } = useProducts();
+  const { portions, getActivePortions } = usePortions();
   const { orders, readyOrders, removeReadyOrder } = useOrders();
   const { addSale } = useSales();
-  const { decreaseStock } = useStock();
+  const { decreaseStock, decreaseFractionalStock, checkFractionalStockAvailable } = useStock();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -51,25 +59,54 @@ export default function AdminPDV() {
   const [qrInput, setQrInput] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<Sale["paymentMethod"]>("dinheiro");
   const [currentComanda, setCurrentComanda] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("products");
+
+  // Filter products (only whole products for direct sale)
+  const wholeProducts = getWholeProducts().filter(p => p.active !== false && p.price > 0);
+  const activePortions = getActivePortions();
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    return wholeProducts.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = filterCategory === "all" || product.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [products, searchTerm, filterCategory]);
+  }, [wholeProducts, searchTerm, filterCategory]);
+
+  const filteredPortions = useMemo(() => {
+    return activePortions.filter((portion) => {
+      const matchesSearch = portion.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === "all" || portion.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [activePortions, searchTerm, filterCategory]);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   }, [cart]);
 
-  const addToCart = (product: typeof products[0]) => {
-    const existingItem = cart.find((item) => item.productId === product.id);
+  // Check if portion has sufficient stock
+  const checkPortionStock = useCallback((portionId: string, quantity: number = 1) => {
+    const portion = portions.find(p => p.id === portionId);
+    if (!portion) return { available: false, missing: [] as string[] };
+
+    const missing: string[] = [];
+    for (const ingredient of portion.ingredients) {
+      const neededAmount = ingredient.consumeAmount * quantity;
+      if (!checkFractionalStockAvailable(ingredient.productId, neededAmount)) {
+        missing.push(ingredient.productName);
+      }
+    }
+
+    return { available: missing.length === 0, missing };
+  }, [portions, checkFractionalStockAvailable]);
+
+  const addToCart = (product: typeof wholeProducts[0]) => {
+    const existingItem = cart.find((item) => item.productId === product.id && !item.isPortion);
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.productId === product.id
+          item.productId === product.id && !item.isPortion
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -82,25 +119,84 @@ export default function AdminPDV() {
           productName: product.name,
           unitPrice: product.price,
           quantity: 1,
+          isPortion: false,
         },
       ]);
     }
   };
 
-  const updateCartQuantity = (productId: string, delta: number) => {
-    setCart(
-      cart
-        .map((item) =>
-          item.productId === productId
-            ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+  const addPortionToCart = (portion: typeof activePortions[0]) => {
+    // Check stock availability
+    const stockCheck = checkPortionStock(portion.id, 1);
+    if (!stockCheck.available) {
+      toast.error(`Estoque insuficiente: ${stockCheck.missing.join(", ")}`);
+      return;
+    }
+
+    const existingItem = cart.find((item) => item.portionId === portion.id);
+    if (existingItem) {
+      // Check if adding one more is possible
+      const newQty = existingItem.quantity + 1;
+      const stockCheckNew = checkPortionStock(portion.id, newQty);
+      if (!stockCheckNew.available) {
+        toast.error(`Estoque insuficiente para adicionar mais: ${stockCheckNew.missing.join(", ")}`);
+        return;
+      }
+      setCart(
+        cart.map((item) =>
+          item.portionId === portion.id
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         )
+      );
+    } else {
+      setCart([
+        ...cart,
+        {
+          productId: portion.id,
+          productName: portion.name,
+          unitPrice: portion.price,
+          quantity: 1,
+          isPortion: true,
+          portionId: portion.id,
+        },
+      ]);
+    }
+  };
+
+  const updateCartQuantity = (productId: string, delta: number, isPortion?: boolean, portionId?: string) => {
+    // For portions, check stock when increasing
+    if (isPortion && delta > 0 && portionId) {
+      const currentItem = cart.find(i => i.portionId === portionId);
+      const newQty = (currentItem?.quantity || 0) + delta;
+      const stockCheck = checkPortionStock(portionId, newQty);
+      if (!stockCheck.available) {
+        toast.error(`Estoque insuficiente: ${stockCheck.missing.join(", ")}`);
+        return;
+      }
+    }
+
+    setCart(
+      cart
+        .map((item) => {
+          if (isPortion && item.portionId === portionId) {
+            return { ...item, quantity: Math.max(0, item.quantity + delta) };
+          }
+          if (!isPortion && item.productId === productId && !item.isPortion) {
+            return { ...item, quantity: Math.max(0, item.quantity + delta) };
+          }
+          return item;
+        })
         .filter((item) => item.quantity > 0)
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(cart.filter((item) => item.productId !== productId));
+  const removeFromCart = (productId: string, isPortion?: boolean, portionId?: string) => {
+    if (isPortion) {
+      setCart(cart.filter((item) => item.portionId !== portionId));
+    } else {
+      setCart(cart.filter((item) => !(item.productId === productId && !item.isPortion)));
+    }
   };
 
   const clearCart = () => {
@@ -119,7 +215,6 @@ export default function AdminPDV() {
       return;
     }
 
-    // Find all orders for this comanda (both preparing and ready)
     const allOrders = [...orders, ...readyOrders];
     const comandaOrders = allOrders.filter((o) => o.comandaNumber === comandaNumber);
 
@@ -128,13 +223,11 @@ export default function AdminPDV() {
       return;
     }
 
-    // Check if all orders are ready
     const hasPreparingOrders = comandaOrders.some((o) => o.status === "preparing");
     if (hasPreparingOrders) {
       toast.warning("Alguns pedidos ainda estão em preparo");
     }
 
-    // Add all items to cart
     const items: PDVCartItem[] = [];
     comandaOrders.forEach((order) => {
       order.items.forEach((item) => {
@@ -164,14 +257,9 @@ export default function AdminPDV() {
   };
 
   const handleQRScanSuccess = (decodedText: string) => {
-    // Try to extract comanda number from QR code
-    // QR code might be just a number or a URL with number
     let comandaNumber: number;
-    
-    // Try to parse as number first
     comandaNumber = parseInt(decodedText);
     
-    // If not a direct number, try to extract from URL or other format
     if (isNaN(comandaNumber)) {
       const match = decodedText.match(/comanda[=\/:]?(\d+)/i);
       if (match) {
@@ -192,6 +280,17 @@ export default function AdminPDV() {
       return;
     }
 
+    // Validate stock for portions
+    for (const item of cart) {
+      if (item.isPortion && item.portionId) {
+        const stockCheck = checkPortionStock(item.portionId, item.quantity);
+        if (!stockCheck.available) {
+          toast.error(`Estoque insuficiente para "${item.productName}": ${stockCheck.missing.join(", ")}`);
+          return;
+        }
+      }
+    }
+
     // Create sale record
     const sale: Omit<Sale, "id" | "createdAt"> = {
       items: cart.map((item) => ({
@@ -207,12 +306,23 @@ export default function AdminPDV() {
       paymentMethod: selectedPayment,
     };
 
-    // Add sale
     addSale(sale);
 
     // Update stock
     cart.forEach((item) => {
-      decreaseStock(item.productId, item.quantity);
+      if (item.isPortion && item.portionId) {
+        // Decrease fractional stock for portions
+        const portion = portions.find(p => p.id === item.portionId);
+        if (portion) {
+          portion.ingredients.forEach(ingredient => {
+            const consumeTotal = ingredient.consumeAmount * item.quantity;
+            decreaseFractionalStock(ingredient.productId, consumeTotal);
+          });
+        }
+      } else {
+        // Decrease regular stock
+        decreaseStock(item.productId, item.quantity);
+      }
     });
 
     // If it's a comanda, remove the ready orders
@@ -261,14 +371,20 @@ export default function AdminPDV() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Search */}
+          {/* Tabs and Search */}
           <Card className="bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full grid grid-cols-2 mb-4">
+                  <TabsTrigger value="products">Produtos</TabsTrigger>
+                  <TabsTrigger value="portions">Porções</TabsTrigger>
+                </TabsList>
+              </Tabs>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar produto..."
+                    placeholder={activeTab === "products" ? "Buscar produto..." : "Buscar porção..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-secondary border-border"
@@ -291,21 +407,64 @@ export default function AdminPDV() {
             </CardContent>
           </Card>
 
-          {/* Products Grid */}
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {filteredProducts.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-left hover:bg-secondary/80 transition-all active:scale-95"
-              >
-                <p className="font-medium text-foreground text-sm line-clamp-2 mb-1">
-                  {product.name}
+          {/* Products/Portions Grid */}
+          {activeTab === "products" ? (
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+              {filteredProducts.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-left hover:bg-secondary/80 transition-all active:scale-95"
+                >
+                  <p className="font-medium text-foreground text-sm line-clamp-2 mb-1">
+                    {product.name}
+                  </p>
+                  <p className="text-primary font-bold">R$ {product.price.toFixed(2)}</p>
+                </button>
+              ))}
+              {filteredProducts.length === 0 && (
+                <p className="col-span-full text-center text-muted-foreground py-8">
+                  Nenhum produto encontrado
                 </p>
-                <p className="text-primary font-bold">R$ {product.price.toFixed(2)}</p>
-              </button>
-            ))}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+              {filteredPortions.map((portion) => {
+                const stockCheck = checkPortionStock(portion.id, 1);
+                return (
+                  <button
+                    key={portion.id}
+                    onClick={() => addPortionToCart(portion)}
+                    disabled={!stockCheck.available}
+                    className={`bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-left transition-all ${
+                      stockCheck.available 
+                        ? "hover:bg-secondary/80 active:scale-95" 
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-medium text-foreground text-sm line-clamp-2 mb-1">
+                        {portion.name}
+                      </p>
+                      {!stockCheck.available && (
+                        <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-primary font-bold">R$ {portion.price.toFixed(2)}</p>
+                    {!stockCheck.available && (
+                      <p className="text-xs text-destructive mt-1">Estoque insuficiente</p>
+                    )}
+                  </button>
+                );
+              })}
+              {filteredPortions.length === 0 && (
+                <p className="col-span-full text-center text-muted-foreground py-8">
+                  Nenhuma porção encontrada
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Cart Section */}
@@ -330,13 +489,20 @@ export default function AdminPDV() {
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
                     {cart.map((item) => (
                       <div
-                        key={item.productId}
+                        key={item.isPortion ? item.portionId : item.productId}
                         className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {item.productName}
-                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {item.productName}
+                            </p>
+                            {item.isPortion && (
+                              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1 rounded">
+                                Porção
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             R$ {item.unitPrice.toFixed(2)} x {item.quantity}
                           </p>
@@ -346,7 +512,7 @@ export default function AdminPDV() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            onClick={() => updateCartQuantity(item.productId, -1)}
+                            onClick={() => updateCartQuantity(item.productId, -1, item.isPortion, item.portionId)}
                           >
                             <Minus className="w-3 h-3" />
                           </Button>
@@ -357,7 +523,7 @@ export default function AdminPDV() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            onClick={() => updateCartQuantity(item.productId, 1)}
+                            onClick={() => updateCartQuantity(item.productId, 1, item.isPortion, item.portionId)}
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
@@ -365,7 +531,7 @@ export default function AdminPDV() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-destructive"
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.productId, item.isPortion, item.portionId)}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -420,13 +586,11 @@ export default function AdminPDV() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* QR Code Scanner */}
             <QRCodeScanner 
               onScanSuccess={handleQRScanSuccess}
               onScanError={(err) => console.log("Scanner error:", err)}
             />
             
-            {/* Manual input divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
@@ -436,7 +600,6 @@ export default function AdminPDV() {
               </div>
             </div>
 
-            {/* Manual number input */}
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">
                 Número da Comanda
@@ -494,7 +657,7 @@ export default function AdminPDV() {
                     className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
                       selectedPayment === method.id
                         ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-secondary/50 text-foreground hover:bg-secondary"
+                        : "border-border text-foreground hover:bg-secondary"
                     }`}
                   >
                     <method.icon className="w-5 h-5" />
