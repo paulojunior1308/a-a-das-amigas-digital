@@ -592,10 +592,14 @@ export default function AdminStock() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowProductModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowProductModal(false)}
+              className="bg-acai-purple-deep text-white border-acai-purple-deep hover:bg-acai-purple-dark"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSaveProduct} className="bg-primary text-primary-foreground">
+            <Button onClick={handleSaveProduct} className="bg-primary text-acai-purple-deep hover:bg-primary/90">
               {editingProduct ? "Salvar" : "Adicionar"}
             </Button>
           </DialogFooter>
@@ -617,10 +621,14 @@ export default function AdminStock() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCategoryModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCategoryModal(false)}
+              className="bg-acai-purple-deep text-white border-acai-purple-deep hover:bg-acai-purple-dark"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleAddCategory} className="bg-primary text-primary-foreground">
+            <Button onClick={handleAddCategory} className="bg-primary text-acai-purple-deep hover:bg-primary/90">
               Adicionar
             </Button>
           </DialogFooter>

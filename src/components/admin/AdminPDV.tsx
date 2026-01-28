@@ -690,13 +690,17 @@ export default function AdminPDV() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowQRModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowQRModal(false)}
+              className="bg-acai-purple-deep text-white border-acai-purple-deep hover:bg-acai-purple-dark"
+            >
               Cancelar
             </Button>
             <Button
               onClick={handleScanComanda}
               disabled={!qrInput}
-              className="bg-primary text-primary-foreground"
+              className="bg-primary text-acai-purple-deep hover:bg-primary/90 disabled:opacity-50"
             >
               Carregar Comanda
             </Button>
@@ -750,7 +754,11 @@ export default function AdminPDV() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPaymentModal(false)}
+              className="bg-acai-purple-deep text-white border-acai-purple-deep hover:bg-acai-purple-dark"
+            >
               Cancelar
             </Button>
             <Button
