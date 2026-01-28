@@ -6,9 +6,13 @@ import { ChefHat, Tv, Store, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useKitchenNotification } from "@/hooks/useKitchenNotification";
 
 export default function Kitchen() {
   const { orders, markAsReady } = useOrders();
+  
+  // Play notification sound when new orders arrive
+  useKitchenNotification(orders.length);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<"all" | "balcao" | "comanda">("all");
 
@@ -97,10 +101,11 @@ export default function Kitchen() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredOrders.map((order) => (
+          {filteredOrders.map((order, index) => (
             <KitchenOrderCard
               key={order.id}
               order={order}
+              index={index}
               onClick={() => setSelectedOrder(order)}
             />
           ))}

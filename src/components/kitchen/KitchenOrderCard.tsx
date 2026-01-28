@@ -5,9 +5,10 @@ import { Clock, Package, CreditCard, Store, User } from "lucide-react";
 interface KitchenOrderCardProps {
   order: Order;
   onClick: () => void;
+  index?: number;
 }
 
-export function KitchenOrderCard({ order, onClick }: KitchenOrderCardProps) {
+export function KitchenOrderCard({ order, onClick, index = 0 }: KitchenOrderCardProps) {
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const minutesAgo = Math.floor((Date.now() - order.createdAt.getTime()) / 60000);
   const isBalcao = order.orderType === "balcao";
@@ -15,9 +16,10 @@ export function KitchenOrderCard({ order, onClick }: KitchenOrderCardProps) {
   return (
     <button
       onClick={onClick}
+      style={{ animationDelay: `${index * 100}ms` }}
       className={cn(
         "relative w-full p-6 rounded-2xl transition-all duration-300 active:scale-95",
-        "shadow-lg hover:shadow-xl",
+        "shadow-lg hover:shadow-xl animate-slide-in-up",
         isBalcao
           ? "bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-400"
           : "bg-card border-2 border-acai-yellow"
