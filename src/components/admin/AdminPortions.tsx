@@ -469,7 +469,7 @@ export default function AdminPortions() {
             <Button 
               variant="outline" 
               onClick={() => setShowModal(false)}
-              className="border-acai-purple-deep text-acai-purple-deep hover:bg-acai-purple-deep hover:text-white"
+              className="bg-acai-purple-deep text-white border-acai-purple-deep hover:bg-acai-purple-dark"
             >
               Cancelar
             </Button>
