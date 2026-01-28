@@ -94,11 +94,11 @@ export function KitchenOrderModal({
                   "p-4 rounded-xl border",
                   isBalcao 
                     ? "bg-orange-50 border-orange-200" 
-                    : "bg-muted border-border"
+                    : "bg-secondary/50 border-border"
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="text-xl font-bold text-foreground">
+                  <h4 className="text-xl font-bold text-card-foreground">
                     {item.product.name}
                   </h4>
                   <span className={cn(
@@ -112,9 +112,9 @@ export function KitchenOrderModal({
                 </div>
                 
                 {item.observation && (
-                  <div className="flex items-start gap-2 mt-3 p-3 bg-acai-yellow/10 rounded-lg border border-acai-yellow/30">
-                    <MessageSquare className="w-5 h-5 text-acai-yellow-dark flex-shrink-0 mt-0.5" />
-                    <span className="text-base font-medium text-acai-yellow-dark">
+                  <div className="flex items-start gap-2 mt-3 p-3 bg-amber-100 rounded-lg border border-amber-300">
+                    <MessageSquare className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                    <span className="text-base font-medium text-amber-800">
                       {item.observation}
                     </span>
                   </div>

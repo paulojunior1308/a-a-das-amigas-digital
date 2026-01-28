@@ -59,7 +59,10 @@ export default {
             DEFAULT: "hsl(var(--acai-lilac))",
             light: "hsl(var(--acai-lilac-light))",
           },
-          yellow: "hsl(var(--acai-yellow))",
+          yellow: {
+            DEFAULT: "hsl(var(--acai-yellow))",
+            dark: "hsl(var(--acai-yellow-dark))",
+          },
           pink: "hsl(var(--acai-pink))",
           green: {
             DEFAULT: "hsl(var(--acai-green))",
@@ -107,6 +110,19 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 hsla(37, 91%, 55%, 0.4)" },
           "50%": { boxShadow: "0 0 20px 5px hsla(37, 91%, 55%, 0.2)" },
         },
+        "slide-in-up": {
+          "0%": { transform: "translateY(30px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "scale-in": {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-5px)" },
+          "75%": { transform: "translateX(5px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -115,6 +131,9 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "bounce-soft": "bounce-soft 2s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "slide-in-up": "slide-in-up 0.4s ease-out",
+        "scale-in": "scale-in 0.3s ease-out",
+        "shake": "shake 0.5s ease-in-out",
       },
     },
   },
