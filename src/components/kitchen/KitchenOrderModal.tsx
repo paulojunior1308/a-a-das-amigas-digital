@@ -87,40 +87,65 @@ export function KitchenOrderModal({
 
         <ScrollArea className="max-h-[50vh] pr-4">
           <div className="space-y-4 py-4">
-            {order.items.map((item, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "p-4 rounded-xl border",
-                  isBalcao 
-                    ? "bg-orange-50 border-orange-200" 
-                    : "bg-secondary/50 border-border"
-                )}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="text-xl font-bold text-card-foreground">
-                    {item.product.name}
-                  </h4>
-                  <span className={cn(
-                    "text-2xl font-bold px-3 py-1 rounded-full",
+            {order.items.map((item, index) => {
+              const removedIngredients = item.selectedIngredients?.filter(i => !i.included) || [];
+              
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "p-4 rounded-xl border",
                     isBalcao 
-                      ? "bg-orange-200 text-orange-800" 
-                      : "bg-acai-lilac text-acai-purple-deep"
-                  )}>
-                    x{item.quantity}
-                  </span>
-                </div>
-                
-                {item.observation && (
-                  <div className="flex items-start gap-2 mt-3 p-3 bg-amber-100 rounded-lg border border-amber-300">
-                    <MessageSquare className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-                    <span className="text-base font-medium text-amber-800">
-                      {item.observation}
+                      ? "bg-orange-50 border-orange-200" 
+                      : "bg-secondary/50 border-border"
+                  )}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-card-foreground">
+                        {item.product.name}
+                      </h4>
+                      {item.isComposite && (
+                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">
+                          Produto Composto
+                        </span>
+                      )}
+                    </div>
+                    <span className={cn(
+                      "text-2xl font-bold px-3 py-1 rounded-full",
+                      isBalcao 
+                        ? "bg-orange-200 text-orange-800" 
+                        : "bg-acai-lilac text-acai-purple-deep"
+                    )}>
+                      x{item.quantity}
                     </span>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Removed ingredients - very important for kitchen */}
+                  {removedIngredients.length > 0 && (
+                    <div className="mt-3 p-3 bg-red-100 rounded-lg border-2 border-red-400">
+                      <p className="font-bold text-red-800 text-lg mb-1">
+                        ⛔ SEM:
+                      </p>
+                      <ul className="list-disc list-inside text-red-700 font-medium">
+                        {removedIngredients.map((ing, idx) => (
+                          <li key={idx}>{ing.productName}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {item.observation && (
+                    <div className="flex items-start gap-2 mt-3 p-3 bg-amber-100 rounded-lg border border-amber-300">
+                      <MessageSquare className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                      <span className="text-base font-medium text-amber-800">
+                        {item.observation}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </ScrollArea>
 

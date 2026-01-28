@@ -24,6 +24,16 @@ export interface CartItem {
   product: Product;
   quantity: number;
   observation: string;
+  // Composite product fields
+  isComposite?: boolean;
+  compositeId?: string;
+  selectedIngredients?: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    measureUnit: "g" | "ml" | "un";
+    included: boolean;
+  }[];
 }
 
 export interface Category {

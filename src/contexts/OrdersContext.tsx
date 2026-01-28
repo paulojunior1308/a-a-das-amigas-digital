@@ -160,6 +160,9 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
         },
         quantity: item.quantity,
         observation: item.observation || "",
+        isComposite: item.isComposite,
+        compositeId: item.compositeId,
+        selectedIngredients: item.selectedIngredients,
       }));
 
     if (cartItems.length > 0) {
