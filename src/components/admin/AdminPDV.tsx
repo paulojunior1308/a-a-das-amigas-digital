@@ -11,7 +11,8 @@ import {
   Banknote,
   Smartphone,
   ChefHat,
-  User
+  User,
+  Sandwich
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,15 +42,19 @@ import { usePortions } from "@/contexts/PortionsContext";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useSales } from "@/contexts/SalesContext";
 import { useStock } from "@/contexts/StockContext";
+import { useCompositeProducts } from "@/contexts/CompositeProductsContext";
 import { PDVCartItem, Sale } from "@/types/admin";
+import { CompositeProduct, SelectedIngredient } from "@/types/compositeProduct";
 import { toast } from "sonner";
 import QRCodeScanner from "./QRCodeScanner";
 import { PDVCartFAB } from "./PDVCartFAB";
 import { PDVCartDrawer } from "./PDVCartDrawer";
+import IngredientSelectionModal from "./IngredientSelectionModal";
 
 export default function AdminPDV() {
   const { products, categories, getWholeProducts } = useProducts();
   const { portions, getActivePortions } = usePortions();
+  const { compositeProducts, getActiveByType } = useCompositeProducts();
   const { orders, readyOrders, removeReadyOrder, addBalcaoOrder } = useOrders();
   const { addSale } = useSales();
   const { decreaseStock, decreaseFractionalStock, checkFractionalStockAvailable } = useStock();
@@ -65,10 +70,17 @@ export default function AdminPDV() {
   const [activeTab, setActiveTab] = useState("products");
   const [showMobileCart, setShowMobileCart] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  
+  // Composite product selection state
+  const [selectedComposite, setSelectedComposite] = useState<CompositeProduct | null>(null);
+  const [showIngredientModal, setShowIngredientModal] = useState(false);
 
   // Filter products (only whole products for direct sale)
   const wholeProducts = getWholeProducts().filter(p => p.active !== false && p.price > 0);
   const activePortions = getActivePortions();
+  const activeLanches = getActiveByType("lanche");
+  const activePorcoes = getActiveByType("porcao");
+  const activeDoses = getActiveByType("dose");
 
   const filteredProducts = useMemo(() => {
     return wholeProducts.filter((product) => {
@@ -85,6 +97,15 @@ export default function AdminPDV() {
       return matchesSearch && matchesCategory;
     });
   }, [activePortions, searchTerm, filterCategory]);
+
+  // All composite products combined and filtered
+  const filteredComposites = useMemo(() => {
+    const allComposites = [...activeLanches, ...activePorcoes, ...activeDoses];
+    return allComposites.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
+  }, [activeLanches, activePorcoes, activeDoses, searchTerm]);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
@@ -114,6 +135,54 @@ export default function AdminPDV() {
 
     return { available: missing.length === 0, missing };
   }, [portions, checkFractionalStockAvailable]);
+
+  // Open ingredient selection for composite products
+  const openCompositeSelection = (composite: CompositeProduct) => {
+    setSelectedComposite(composite);
+    setShowIngredientModal(true);
+  };
+
+  // Add composite product to cart after ingredient selection
+  const addCompositeToCart = (
+    selectedIngredients: SelectedIngredient[],
+    observation: string,
+    quantity: number
+  ) => {
+    if (!selectedComposite) return;
+
+    // Generate unique ID for this cart item (to allow same product with different ingredients)
+    const cartItemId = `${selectedComposite.id}-${Date.now()}`;
+
+    setCart([
+      ...cart,
+      {
+        productId: cartItemId,
+        productName: selectedComposite.name,
+        unitPrice: selectedComposite.price,
+        quantity,
+        isComposite: true,
+        compositeId: selectedComposite.id,
+        needsPreparation: selectedComposite.needsPreparation,
+        observation,
+        selectedIngredients: selectedIngredients.map(ing => ({
+          productId: ing.productId,
+          productName: ing.productName,
+          quantity: ing.quantity,
+          measureUnit: ing.measureUnit,
+          included: ing.included,
+        })),
+      },
+    ]);
+
+    const removedCount = selectedIngredients.filter(i => !i.included).length;
+    if (removedCount > 0) {
+      toast.success(`${selectedComposite.name} adicionado com ${removedCount} ingrediente(s) removido(s)`);
+    } else {
+      toast.success(`${selectedComposite.name} adicionado ao pedido`);
+    }
+    
+    setSelectedComposite(null);
+  };
 
   const addToCart = (product: typeof wholeProducts[0]) => {
     const existingItem = cart.find((item) => item.productId === product.id && !item.isPortion);
@@ -400,8 +469,12 @@ export default function AdminPDV() {
           <Card className="bg-card/80 backdrop-blur-sm border-border/50">
             <CardContent className="p-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-2 mb-4">
+                <TabsList className="w-full grid grid-cols-3 mb-4">
                   <TabsTrigger value="products">Produtos</TabsTrigger>
+                  <TabsTrigger value="composites" className="flex items-center gap-1">
+                    <Sandwich className="w-3 h-3" />
+                    Lanches
+                  </TabsTrigger>
                   <TabsTrigger value="portions">Porções</TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -409,31 +482,39 @@ export default function AdminPDV() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder={activeTab === "products" ? "Buscar produto..." : "Buscar porção..."}
+                    placeholder={
+                      activeTab === "products" 
+                        ? "Buscar produto..." 
+                        : activeTab === "composites"
+                        ? "Buscar lanche, porção ou dose..."
+                        : "Buscar porção..."
+                    }
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-secondary border-border"
                   />
                 </div>
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="w-full sm:w-48 bg-secondary border-border">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {activeTab !== "composites" && (
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger className="w-full sm:w-48 bg-secondary border-border">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Products/Portions Grid */}
-          {activeTab === "products" ? (
+          {/* Products/Composites/Portions Grid */}
+          {activeTab === "products" && (
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
               {filteredProducts.map((product) => (
                 <button
@@ -458,7 +539,41 @@ export default function AdminPDV() {
                 </p>
               )}
             </div>
-          ) : (
+          )}
+
+          {activeTab === "composites" && (
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+              {filteredComposites.map((composite) => {
+                const typeLabel = composite.type === "lanche" ? "Lanche" : composite.type === "porcao" ? "Porção" : "Dose";
+                const typeColor = composite.type === "lanche" ? "bg-orange-500/20 text-orange-300" : composite.type === "porcao" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300";
+                return (
+                  <button
+                    key={composite.id}
+                    onClick={() => openCompositeSelection(composite)}
+                    className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-left hover:bg-secondary/80 transition-all active:scale-95"
+                  >
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <p className="font-medium text-foreground text-sm line-clamp-2">
+                        {composite.name}
+                      </p>
+                      <ChefHat className="w-3 h-3 text-acai-yellow shrink-0" />
+                    </div>
+                    <p className="text-primary font-bold">R$ {composite.price.toFixed(2)}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded mt-1 inline-block ${typeColor}`}>
+                      {typeLabel}
+                    </span>
+                  </button>
+                );
+              })}
+              {filteredComposites.length === 0 && (
+                <p className="col-span-full text-center text-muted-foreground py-8">
+                  Nenhum produto composto encontrado
+                </p>
+              )}
+            </div>
+          )}
+
+          {activeTab === "portions" && (
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
               {filteredPortions.map((portion) => {
                 const stockCheck = checkPortionStock(portion.id, 1);
@@ -517,60 +632,91 @@ export default function AdminPDV() {
               {cart.length > 0 ? (
                 <>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    {cart.map((item) => (
-                      <div
-                        key={item.isPortion ? item.portionId : item.productId}
-                        className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {item.productName}
-                            </p>
-                            {item.isPortion && (
-                              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1 rounded">
-                                Porção
-                              </span>
-                            )}
-                            {item.needsPreparation && (
-                              <ChefHat className="w-3 h-3 text-acai-yellow shrink-0" />
-                            )}
+                    {cart.map((item) => {
+                      const removedIngredients = item.selectedIngredients?.filter(i => !i.included) || [];
+                      return (
+                        <div
+                          key={item.isComposite ? item.productId : item.isPortion ? item.portionId : item.productId}
+                          className="p-2 bg-secondary/50 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {item.productName}
+                                </p>
+                                {item.isComposite && (
+                                  <span className="text-[10px] bg-orange-500/20 text-orange-300 px-1 rounded">
+                                    Composto
+                                  </span>
+                                )}
+                                {item.isPortion && !item.isComposite && (
+                                  <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1 rounded">
+                                    Porção
+                                  </span>
+                                )}
+                                {item.needsPreparation && (
+                                  <ChefHat className="w-3 h-3 text-acai-yellow shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                R$ {item.unitPrice.toFixed(2)} x {item.quantity}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {!item.isComposite && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => updateCartQuantity(item.productId, -1, item.isPortion, item.portionId)}
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </Button>
+                                  <span className="w-6 text-center text-sm font-medium text-foreground">
+                                    {item.quantity}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => updateCartQuantity(item.productId, 1, item.isPortion, item.portionId)}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                </>
+                              )}
+                              {item.isComposite && (
+                                <span className="w-6 text-center text-sm font-medium text-foreground">
+                                  {item.quantity}x
+                                </span>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive"
+                                onClick={() => removeFromCart(item.productId, item.isPortion, item.portionId)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            R$ {item.unitPrice.toFixed(2)} x {item.quantity}
-                          </p>
+                          {/* Show removed ingredients for composite products */}
+                          {removedIngredients.length > 0 && (
+                            <p className="text-[10px] text-orange-400 mt-1">
+                              Sem: {removedIngredients.map(i => i.productName).join(", ")}
+                            </p>
+                          )}
+                          {/* Show observation */}
+                          {item.observation && (
+                            <p className="text-[10px] text-muted-foreground mt-1 italic">
+                              📝 {item.observation}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateCartQuantity(item.productId, -1, item.isPortion, item.portionId)}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="w-6 text-center text-sm font-medium text-foreground">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateCartQuantity(item.productId, 1, item.isPortion, item.portionId)}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => removeFromCart(item.productId, item.isPortion, item.portionId)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Customer name field - only for PDV sales with preparation items */}
@@ -770,6 +916,19 @@ export default function AdminPDV() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Ingredient Selection Modal for Composite Products */}
+      {selectedComposite && (
+        <IngredientSelectionModal
+          isOpen={showIngredientModal}
+          onClose={() => {
+            setShowIngredientModal(false);
+            setSelectedComposite(null);
+          }}
+          product={selectedComposite}
+          onConfirm={addCompositeToCart}
+        />
+      )}
     </div>
   );
 }
