@@ -466,10 +466,14 @@ export default function AdminPortions() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModal(false)}
+              className="border-acai-purple-deep text-acai-purple-deep hover:bg-acai-purple-deep hover:text-white"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSave} className="bg-primary text-primary-foreground">
+            <Button onClick={handleSave} className="bg-primary text-acai-purple-deep hover:bg-primary/90">
               {editingPortion ? "Salvar" : "Adicionar"}
             </Button>
           </DialogFooter>
