@@ -59,6 +59,18 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
                     <h4 className="font-bold text-card-foreground">
                       {item.product.name}
                     </h4>
+                    {/* Show removed ingredients for composite products */}
+                    {item.isComposite && item.selectedIngredients && (
+                      <div className="mt-1">
+                        {item.selectedIngredients
+                          .filter((ing) => !ing.included)
+                          .map((ing) => (
+                            <p key={ing.productId} className="text-xs text-destructive">
+                              ⛔ Sem: {ing.productName}
+                            </p>
+                          ))}
+                      </div>
+                    )}
                     {item.observation && (
                       <p className="text-sm text-accent italic mt-1">
                         📝 {item.observation}
@@ -66,7 +78,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
                     )}
                   </div>
                   <button
-                    onClick={() => removeItem(item.product.id)}
+                    onClick={() => removeItem(index)}
                     className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive transition-colors hover:bg-destructive/20"
                     aria-label="Remover item"
                   >
@@ -77,9 +89,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() =>
-                        updateQuantity(item.product.id, item.quantity - 1)
-                      }
+                      onClick={() => updateQuantity(index, item.quantity - 1)}
                       className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
                       aria-label="Diminuir quantidade"
                     >
@@ -89,9 +99,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() =>
-                        updateQuantity(item.product.id, item.quantity + 1)
-                      }
+                      onClick={() => updateQuantity(index, item.quantity + 1)}
                       className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
                       aria-label="Aumentar quantidade"
                     >
