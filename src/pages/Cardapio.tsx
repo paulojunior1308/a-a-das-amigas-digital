@@ -3,24 +3,32 @@ import { useSearchParams } from "react-router-dom";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useOrders } from "@/contexts/OrdersContext";
 import { useComanda } from "@/contexts/ComandaContext";
+import { useCompositeProducts } from "@/contexts/CompositeProductsContext";
+import { useStockDeduction } from "@/hooks/useStockDeduction";
 import { CardapioHeader } from "@/components/menu/CardapioHeader";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { CategorySection } from "@/components/menu/CategorySection";
+import { CompositeProductSection } from "@/components/menu/CompositeProductSection";
 import { AddItemModal } from "@/components/menu/AddItemModal";
+import { AddCompositeItemModal } from "@/components/menu/AddCompositeItemModal";
 import { CartBar } from "@/components/menu/CartBar";
 import { CartDrawer } from "@/components/menu/CartDrawer";
 import { OrderSent } from "@/components/menu/OrderSent";
 import { SearchBar } from "@/components/menu/SearchBar";
 import { BackToTopButton } from "@/components/menu/BackToTopButton";
 import { categories, products } from "@/data/menuData";
-import { Product } from "@/types/menu";
+import { Product, Category } from "@/types/menu";
+import { CompositeProduct } from "@/types/compositeProduct";
 import { AlertCircle } from "lucide-react";
 
 function CardapioContent() {
   const [searchParams] = useSearchParams();
   const { comandaNumber, setComandaNumber, isComandaValid } = useComanda();
+  const { getActiveByType } = useCompositeProducts();
+  const { deductStockForOrder } = useStockDeduction();
   const [activeCategory, setActiveCategory] = useState(categories[0].id);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCompositeProduct, setSelectedCompositeProduct] = useState<CompositeProduct | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showOrderSent, setShowOrderSent] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +36,11 @@ function CardapioContent() {
   const { clearCart, items } = useCart();
   const { addOrder } = useOrders();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Get composite products by type
+  const activeLanches = getActiveByType("lanche");
+  const activePorcoes = getActiveByType("porcao");
+  const activeDoses = getActiveByType("dose");
 
   // Capturar número da comanda da URL ao carregar
   useEffect(() => {
@@ -40,7 +53,7 @@ function CardapioContent() {
     }
   }, [searchParams, setComandaNumber]);
 
-  // Filtrar produtos por busca
+  // Filtrar produtos por busca (regular products)
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
     const query = searchQuery.toLowerCase();
@@ -51,11 +64,45 @@ function CardapioContent() {
     );
   }, [searchQuery]);
 
+  // Filter composite products by search
+  const filteredLanches = useMemo(() => {
+    if (!searchQuery.trim()) return activeLanches;
+    const query = searchQuery.toLowerCase();
+    return activeLanches.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery, activeLanches]);
+
+  const filteredPorcoes = useMemo(() => {
+    if (!searchQuery.trim()) return activePorcoes;
+    const query = searchQuery.toLowerCase();
+    return activePorcoes.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery, activePorcoes]);
+
+  const filteredDoses = useMemo(() => {
+    if (!searchQuery.trim()) return activeDoses;
+    const query = searchQuery.toLowerCase();
+    return activeDoses.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery, activeDoses]);
+
+  // Regular products by category (excluding categories that have composite products)
   const productsByCategory = useMemo(() => {
-    return categories.map((category) => ({
-      category,
-      products: filteredProducts.filter((p) => p.category === category.id),
-    }));
+    return categories
+      .filter((cat) => !["lanches", "porcoes"].includes(cat.id)) // These are now composite
+      .map((category) => ({
+        category,
+        products: filteredProducts.filter((p) => p.category === category.id),
+      }));
   }, [filteredProducts]);
 
   // Controlar visibilidade do botão "voltar ao topo"
@@ -124,6 +171,9 @@ function CardapioContent() {
   const handleCheckout = () => {
     if (!comandaNumber) return;
 
+    // Deduct stock for all items (smart deduction for composites)
+    deductStockForOrder(items);
+
     // Enviar pedido para a cozinha com número da comanda
     addOrder(items, comandaNumber);
     clearCart();
@@ -173,6 +223,33 @@ function CardapioContent() {
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto px-4 pb-28"
       >
+        {/* Composite Products: Lanches */}
+        <CompositeProductSection
+          title="Lanches"
+          categoryId="lanches"
+          products={filteredLanches}
+          onAddProduct={setSelectedCompositeProduct}
+        />
+
+        {/* Composite Products: Porções */}
+        <CompositeProductSection
+          title="Porções"
+          categoryId="porcoes"
+          products={filteredPorcoes}
+          onAddProduct={setSelectedCompositeProduct}
+        />
+
+        {/* Composite Products: Doses/Bebidas */}
+        {filteredDoses.length > 0 && (
+          <CompositeProductSection
+            title="Doses"
+            categoryId="doses"
+            products={filteredDoses}
+            onAddProduct={setSelectedCompositeProduct}
+          />
+        )}
+
+        {/* Regular products by category */}
         {productsByCategory.map(({ category, products }) => (
           <CategorySection
             key={category.id}
@@ -188,11 +265,21 @@ function CardapioContent() {
 
       <CartBar onOpenCart={() => setIsCartOpen(true)} />
 
+      {/* Modal for regular products */}
       {selectedProduct && (
         <AddItemModal
           product={selectedProduct}
           isOpen={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {/* Modal for composite products */}
+      {selectedCompositeProduct && (
+        <AddCompositeItemModal
+          product={selectedCompositeProduct}
+          isOpen={!!selectedCompositeProduct}
+          onClose={() => setSelectedCompositeProduct(null)}
         />
       )}
 
