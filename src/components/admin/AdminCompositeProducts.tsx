@@ -354,12 +354,13 @@ export default function AdminCompositeProducts({ type, title, description }: Adm
             {/* Ingredients Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold">Ingredientes</Label>
+                <Label className="text-base font-semibold text-card-foreground">Ingredientes</Label>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={handleAddIngredient}
+                  className="bg-acai-green hover:bg-acai-green-light text-white"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Adicionar

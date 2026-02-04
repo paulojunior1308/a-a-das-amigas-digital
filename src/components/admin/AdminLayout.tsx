@@ -149,10 +149,8 @@ export default function AdminLayout() {
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
           isActive(item.path)
-            ? isChild 
-              ? "bg-primary/30 text-primary"
-              : "bg-primary text-primary-foreground shadow-md"
-            : "text-foreground/80 hover:bg-secondary hover:text-foreground"
+            ? "bg-primary text-primary-foreground shadow-md"
+            : "text-card-foreground hover:bg-secondary hover:text-foreground"
         )}
       >
         <item.icon className={cn("w-5 h-5", isChild && "w-4 h-4")} />
