@@ -16,9 +16,22 @@ import { CartDrawer } from "@/components/menu/CartDrawer";
 import { OrderSent } from "@/components/menu/OrderSent";
 import { SearchBar } from "@/components/menu/SearchBar";
 import { BackToTopButton } from "@/components/menu/BackToTopButton";
-import { categories, products } from "@/data/menuData";
+import { categories as baseCategories, products } from "@/data/menuData";
 import { Product, Category } from "@/types/menu";
 import { CompositeProduct } from "@/types/compositeProduct";
+
+// Add composite product categories to navigation
+const compositeCategories: Category[] = [
+  { id: "lanches", name: "Lanches" },
+  { id: "porcoes", name: "Porções" },
+  { id: "doses", name: "Doses" },
+];
+
+// Merge categories: composite first, then regular (excluding old duplicates)
+const categories: Category[] = [
+  ...compositeCategories,
+  ...baseCategories.filter((cat) => !["lanches", "porcoes"].includes(cat.id)),
+];
 import { AlertCircle } from "lucide-react";
 
 function CardapioContent() {
@@ -125,7 +138,7 @@ function CardapioContent() {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Intersection Observer para detectar categoria visível
+  // Intersection Observer para detectar categoria visível (including composite categories)
   useEffect(() => {
     const root = scrollContainerRef.current;
     if (!root) return;
@@ -139,14 +152,17 @@ function CardapioContent() {
       threshold: 0,
     };
 
-    categories.forEach((category) => {
-      const element = document.getElementById(`category-${category.id}`);
+    // Observe all categories including composite ones
+    const allCategoryIds = [...compositeCategories.map(c => c.id), ...baseCategories.filter(cat => !["lanches", "porcoes"].includes(cat.id)).map(c => c.id)];
+    
+    allCategoryIds.forEach((categoryId) => {
+      const element = document.getElementById(`category-${categoryId}`);
       if (!element) return;
 
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setActiveCategory(category.id);
+            setActiveCategory(categoryId);
           }
         });
       }, observerOptions);
