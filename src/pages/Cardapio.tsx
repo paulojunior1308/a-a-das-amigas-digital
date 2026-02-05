@@ -143,38 +143,41 @@ function CardapioContent() {
     const root = scrollContainerRef.current;
     if (!root) return;
 
-    const observers: IntersectionObserver[] = [];
+    // Pequeno delay para garantir que os elementos estejam renderizados
+    const timeoutId = setTimeout(() => {
+      const observers: IntersectionObserver[] = [];
 
-    // Usar threshold maior e rootMargin que captura elementos próximos ao topo
-    const observerOptions: IntersectionObserverInit = {
-      root,
-      rootMargin: "-10% 0px -80% 0px",
-      threshold: 0,
-    };
+      // Usar rootMargin que captura elementos próximos ao topo da área visível
+      const observerOptions: IntersectionObserverInit = {
+        root,
+        rootMargin: "-120px 0px -70% 0px", // Ajustado para considerar header + nav fixos
+        threshold: 0,
+      };
 
-    // Observe all categories including composite ones
-    const allCategoryIds = [...compositeCategories.map(c => c.id), ...baseCategories.filter(cat => !["lanches", "porcoes"].includes(cat.id)).map(c => c.id)];
-    
-    allCategoryIds.forEach((categoryId) => {
-      const element = document.getElementById(`category-${categoryId}`);
-      if (!element) return;
+      // Observe all categories in order
+      categories.forEach((category) => {
+        const element = document.getElementById(`category-${category.id}`);
+        if (!element) return;
 
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveCategory(categoryId);
-          }
-        });
-      }, observerOptions);
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveCategory(category.id);
+            }
+          });
+        }, observerOptions);
 
-      observer.observe(element);
-      observers.push(observer);
-    });
+        observer.observe(element);
+        observers.push(observer);
+      });
 
-    return () => {
-      observers.forEach((observer) => observer.disconnect());
-    };
-  }, []);
+      return () => {
+        observers.forEach((observer) => observer.disconnect());
+      };
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeLanches, activePorcoes, activeDoses]); // Re-run when products load
 
   const handleCategoryChange = (categoryId: string) => {
     const element = document.getElementById(`category-${categoryId}`);
