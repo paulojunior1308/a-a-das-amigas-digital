@@ -188,7 +188,7 @@ export default function AdminLayout() {
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-border">
+          <div className="p-4 pt-14 lg:pt-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-acai-yellow">
                 <img
@@ -260,7 +260,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-4 lg:p-6">
+        <div className="p-4 pt-16 lg:pt-6 lg:p-6">
           <Outlet />
         </div>
       </main>
