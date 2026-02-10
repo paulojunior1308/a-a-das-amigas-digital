@@ -116,7 +116,7 @@ export default function AdminLayout() {
             className={cn(
               "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
               active
-                ? "bg-primary/20 text-primary"
+                ? "bg-primary text-primary-foreground shadow-md"
                 : "text-foreground/80 hover:bg-secondary hover:text-foreground"
             )}
           >
