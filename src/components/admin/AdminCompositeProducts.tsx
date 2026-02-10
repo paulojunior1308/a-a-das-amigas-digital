@@ -381,7 +381,7 @@ export default function AdminCompositeProducts({ type, title, description }: Adm
                             value={ing.productId}
                             onValueChange={(v) => handleUpdateIngredient(index, "productId", v)}
                           >
-                            <SelectTrigger className="col-span-2">
+                            <SelectTrigger className="col-span-2 bg-card text-card-foreground border-border">
                               <SelectValue placeholder="Selecione..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -405,7 +405,7 @@ export default function AdminCompositeProducts({ type, title, description }: Adm
                             value={ing.measureUnit}
                             onValueChange={(v) => handleUpdateIngredient(index, "measureUnit", v)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-card text-card-foreground border-border">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -431,7 +431,7 @@ export default function AdminCompositeProducts({ type, title, description }: Adm
                           value={ing.requirement}
                           onValueChange={(v) => handleUpdateIngredient(index, "requirement", v as IngredientRequirement)}
                         >
-                          <SelectTrigger className="w-[140px]">
+                          <SelectTrigger className="w-[140px] bg-card text-card-foreground border-border">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
