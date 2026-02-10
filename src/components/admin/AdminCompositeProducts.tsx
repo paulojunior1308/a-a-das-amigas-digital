@@ -184,8 +184,8 @@ export default function AdminCompositeProducts({ type, title, description }: Adm
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-card-foreground">{title}</h2>
-          <p className="text-muted-foreground">{description}</p>
+          <h2 className="text-2xl font-bold text-white">{title}</h2>
+          <p className="text-white/70">{description}</p>
         </div>
         <Button onClick={openNewDialog} className="bg-acai-green hover:bg-acai-green-light text-white">
           <Plus className="w-4 h-4 mr-2" />
